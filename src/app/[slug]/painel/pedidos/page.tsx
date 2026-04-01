@@ -14,6 +14,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useTenant } from "@/hooks/useTenant";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -91,6 +92,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 
 export default function Dashboard() {
   const { slug } = useParams<{ slug: string }>();
+  const { tenant } = useTenant(slug);
   const supabase = createClient();
 
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -178,6 +180,7 @@ export default function Dashboard() {
 
       if (error) {
         toast.error("Erro ao atualizar pedido.");
+        console.log(error);
         // Reverte se falhar
         setOrders((prev) =>
           prev.map((o) =>
@@ -224,6 +227,14 @@ export default function Dashboard() {
     .filter((o) => o.status !== "cancelled")
     .reduce((acc, o) => acc + Number(o.total), 0);
 
+  if (!tenant) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-accent"></div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
       <div className="bg-noise pointer-events-none" />
@@ -240,7 +251,7 @@ export default function Dashboard() {
               Painel de Controle
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-text capitalize">
-              {slug} • Pedidos
+              {tenant?.name} • Pedidos
             </h1>
           </div>
           <StatSmall
