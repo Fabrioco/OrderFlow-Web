@@ -15,7 +15,7 @@ import {
   ShieldCheck,
 } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -26,25 +26,24 @@ export default function SettingsPage() {
   const { settings } = useTenantSettings(pathname.split("/")[1]);
 
   const [isUpdating, setIsUpdating] = useState(false);
-  const [storeOpen, setStoreOpen] = useState(true);
   const [isStoreOpen, setIsStoreOpen] = useState(settings?.is_open);
+
+  // Estados para o perfil
+  const [name, setName] = useState(settings?.name || "");
   const [slug, setSlug] = useState(settings?.slug || "");
+  const [description, setDescription] = useState(settings?.description || "");
 
   const handleToggleStatus = async () => {
     const newStatus = !isStoreOpen;
-
-    // 1. Update Visual Imediato
     setIsStoreOpen(newStatus);
     setIsUpdating(true);
 
-    // 2. Persistência no Supabase (Seção 4.1 do Doc)
     const { error } = await supabase
       .from("tenants")
       .update({ is_open: newStatus })
       .eq("id", settings.id);
 
     if (error) {
-      // 3. Rollback em caso de erro
       setIsStoreOpen(!newStatus);
       toast.error("Erro ao atualizar status operacional");
     } else {
@@ -53,44 +52,66 @@ export default function SettingsPage() {
     setIsUpdating(false);
   };
 
-  const updateSlug = async () => {
-    if (slug === settings.slug) return; // Não faz nada se não mudou
+  // Nova funcionalidade unificada para Nome, Slug e Descrição
+  const handleUpdateProfile = async () => {
+    setIsUpdating(true);
 
     const { error } = await supabase
       .from("tenants")
-      .update({ slug: slug })
+      .update({
+        name: name,
+        slug: slug,
+        description: description,
+      })
       .eq("id", settings.id);
 
-    if (error?.code === "23505") {
-      // Erro de duplicidade no Postgres
-      toast.error("Este endereço já está em uso por outra loja.");
-      setSlug(settings.slug); // Volta ao original
-    } else if (!error) {
-      toast.success("Endereço da loja atualizado!");
-      // Opcional: Redirecionar para a nova URL do painel
-      router.replace(`/${slug}/painel/configuracoes`);
+    if (error) {
+      if (error.code === "23505") {
+        toast.error("Este endereço (URL) já está em uso.");
+      } else {
+        toast.error("Erro ao salvar alterações do perfil.");
+      }
+    } else {
+      toast.success("Perfil atualizado com sucesso!");
+      // Se o slug mudou, redireciona para a nova URL do painel
+      if (slug !== settings.slug) {
+        router.replace(`/${slug}/painel/configuracoes`);
+      }
     }
+    setIsUpdating(false);
   };
 
   const handleConnectMP = () => {
     if (!settings?.id) return;
-
-    // Redireciona para a rota que inicia o fluxo do Mercado Pago
-    // Passamos o tenantId para saber quem está conectando no callback
     window.location.href = `/api/auth/mercadopago?tenantId=${settings.id}`;
   };
+
+  useEffect(() => {
+    if (settings) {
+      setIsStoreOpen(settings.is_open);
+      setName(settings.name || "");
+      setSlug(settings.slug || "");
+      setDescription(settings.description || "");
+    }
+  }, [settings]);
+
+  if (!settings) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
       <div className="bg-noise pointer-events-none" />
 
-      {/* Background Glow */}
       <div className="fixed top-[-10%] right-0 w-[800px] h-[500px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
       <Sidebar />
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10 max-w-7xl mx-auto">
-        {/* Header Identitário */}
         <header className="mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface-alt text-[10px] uppercase tracking-[0.2em] font-bold text-accent mb-4">
             <ShieldCheck size={14} weight="bold" />
@@ -106,9 +127,7 @@ export default function SettingsPage() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Coluna Principal: Formulários */}
           <div className="lg:col-span-8 space-y-8">
-            {/* Card: Perfil da Loja */}
             <div className="bg-surface border border-border rounded-3xl p-8 shadow-2xl relative overflow-hidden">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
@@ -119,8 +138,12 @@ export default function SettingsPage() {
                     Perfil do Estabelecimento
                   </h2>
                 </div>
-                <button className="text-xs font-black uppercase tracking-widest text-accent hover:brightness-125 transition-all">
-                  Salvar Alterações
+                <button
+                  onClick={handleUpdateProfile}
+                  disabled={isUpdating}
+                  className="text-xs font-black uppercase tracking-widest text-accent hover:brightness-125 transition-all disabled:opacity-50"
+                >
+                  {isUpdating ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
 
@@ -131,9 +154,10 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none transition-all"
                     placeholder="Ex: Obsidian Burger"
-                    defaultValue="The Obsidian Flow"
                   />
                 </div>
                 <div className="space-y-2">
@@ -149,20 +173,21 @@ export default function SettingsPage() {
                       onChange={(e) => {
                         const sanitized = e.target.value
                           .toLowerCase()
-                          .replace(/\s+/g, "-") // Espaço -> Hífen
-                          .replace(/[^\w-]+/g, ""); // Remove tudo que não é letra/número/hífen
+                          .replace(/\s+/g, "-")
+                          .replace(/[^\w-]+/g, "");
                         setSlug(sanitized);
                       }}
-                      onBlur={updateSlug} // Salva quando o usuário clica fora do campo
                       className="bg-transparent border-none outline-none text-sm w-full font-medium"
                     />
-                  </div>{" "}
+                  </div>
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">
                     Bio / Descrição Curta
                   </label>
                   <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none transition-all h-24 resize-none"
                     placeholder="Conte um pouco sobre sua loja..."
                   />
@@ -170,7 +195,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Card: Horário de Funcionamento */}
             <div className="bg-surface border border-border rounded-3xl p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
@@ -185,7 +209,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-bg border border-border">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-3 h-3 rounded-full animate-pulse ${storeOpen ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-danger"}`}
+                      className={`w-3 h-3 rounded-full animate-pulse ${isStoreOpen ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-danger"}`}
                     />
                     <div>
                       <p className="text-sm font-bold text-text">
@@ -210,14 +234,11 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Coluna Lateral: Integrações Rápida */}
           <div className="lg:col-span-3 space-y-6">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-text-muted ml-2">
               Conexões
             </h3>
 
-
-            {/* Card Integração: Mercado Pago */}
             <div
               onClick={!settings?.mp_access_token ? handleConnectMP : undefined}
               className={`group bg-surface border border-border rounded-3xl p-6 transition-all cursor-pointer ${
@@ -233,7 +254,6 @@ export default function SettingsPage() {
                   <CreditCard size={28} weight="duotone" />
                 </div>
 
-                {/* Badge Dinâmico */}
                 <div
                   className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${
                     settings?.mp_access_token
@@ -252,7 +272,6 @@ export default function SettingsPage() {
                   : "Aceite Cartão e PIX diretamente no seu checkout."}
               </p>
 
-              {/* Botão de Ação Dinâmico */}
               <div
                 className={`flex items-center gap-2 text-xs font-bold group-hover:gap-3 transition-all ${
                   settings?.mp_access_token ? "text-green-500" : "text-accent"
@@ -260,18 +279,15 @@ export default function SettingsPage() {
               >
                 {settings?.mp_access_token ? (
                   <>
-                    {" "}
-                    Gerenciar Integração <CaretRight />{" "}
+                    Gerenciar Integração <CaretRight />
                   </>
                 ) : (
                   <>
-                    {" "}
-                    Conectar Conta <CaretRight />{" "}
+                    Conectar Conta <CaretRight />
                   </>
                 )}
               </div>
             </div>
-            {/* Dica Enterprise */}
             <div className="p-6 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20">
               <p className="text-sm font-bold text-text mb-2">
                 Precisa de ajuda?
