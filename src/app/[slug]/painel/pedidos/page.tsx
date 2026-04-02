@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
 
@@ -105,11 +105,16 @@ export default function Dashboard() {
       const id = tid ?? tenantId;
       if (!id) return;
       try {
+        // Define o início do dia atual para o filtro
+        const todayStart = startOfDay(new Date()).toISOString();
+
         const { data, error } = await supabase
           .from("orders")
           .select("*, customers(name, phone), order_items(*)")
           .eq("tenant_id", id)
+          .gte("created_at", todayStart) // Filtro para ignorar dias anteriores
           .order("created_at", { ascending: false });
+
         if (error) throw error;
         setOrders((data as Order[]) ?? []);
       } catch (err) {
@@ -121,54 +126,40 @@ export default function Dashboard() {
 
   /* ── Init + Realtime ── */
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel>;
+    if (!tenantId) return;
 
-    async function init() {
-      setLoading(true);
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("id")
-        .eq("slug", slug)
-        .single();
+    const channel = supabase
+      .channel(`realtime:orders:${tenantId}`) // Nome único para o canal
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Ouve INSERT, UPDATE e DELETE
+          schema: "public",
+          table: "orders",
+          // Remova o filter temporariamente para testar se é ele quem está bloqueando
+          // Se funcionar sem, o problema é a sintaxe do filtro ou permissão de RLS
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        (payload) => {
+          console.log("Mudança detectada!", payload);
+          fetchOrders(tenantId);
+        },
+      )
+      .subscribe((status) => {
+        console.log("Status do canal:", status);
+      });
 
-      if (!tenant) {
-        setLoading(false);
-        return;
-      }
-
-      setTenantId(tenant.id);
-      await fetchOrders(tenant.id);
-      setLoading(false);
-
-      // Realtime filtrado pelo tenant — evita ouvir pedidos de outros tenants
-      channel = supabase
-        .channel(`orders-${tenant.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "orders",
-            filter: `tenant_id=eq.${tenant.id}`,
-          },
-          () => fetchOrders(tenant.id),
-        )
-        .subscribe();
-    }
-
-    init();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [slug]);
-
-  /* ── Update status com update otimista ── */
+  }, [tenantId, slug, fetchOrders, supabase]);
+  
+  /* ── Update status ── */
   const handleUpdateStatus = useCallback(
     async (orderId: string, currentStatus: OrderStatus) => {
       const next = STATUS_NEXT[currentStatus];
       if (!next) return;
 
-      // Atualiza localmente antes de ir ao banco
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: next } : o)),
       );
@@ -180,18 +171,12 @@ export default function Dashboard() {
 
       if (error) {
         toast.error("Erro ao atualizar pedido.");
-        console.log(error);
-        // Reverte se falhar
-        setOrders((prev) =>
-          prev.map((o) =>
-            o.id === orderId ? { ...o, status: currentStatus } : o,
-          ),
-        );
+        await fetchOrders();
       } else {
         toast.success(`Pedido ${STATUS_LABEL[next].toLowerCase()}!`);
       }
     },
-    [supabase],
+    [supabase, fetchOrders],
   );
 
   /* ── Cancel ── */
@@ -223,6 +208,8 @@ export default function Dashboard() {
   const done = orders.filter((o) =>
     ["delivered", "cancelled"].includes(o.status),
   );
+
+  // Soma apenas os pedidos carregados (que já são de hoje)
   const totalDay = orders
     .filter((o) => o.status !== "cancelled")
     .reduce((acc, o) => acc + Number(o.total), 0);
@@ -243,7 +230,6 @@ export default function Dashboard() {
       <Sidebar />
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10">
-        {/* Header */}
         <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface-alt text-[10px] uppercase tracking-[0.2em] font-bold text-accent mb-4">
@@ -251,7 +237,7 @@ export default function Dashboard() {
               Painel de Controle
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-text capitalize">
-              {tenant?.name} • Pedidos
+              {tenant?.name} • Pedidos de Hoje
             </h1>
           </div>
           <StatSmall
@@ -261,7 +247,6 @@ export default function Dashboard() {
           />
         </header>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           <StatCard
             label="Pendentes"
@@ -295,7 +280,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Live queue */}
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold tracking-tight text-text">
             Monitor da Cozinha
@@ -325,7 +309,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* History */}
         {done.length > 0 && (
           <>
             <h2 className="text-xl font-bold tracking-tight text-text-secondary mt-16 mb-6">
@@ -374,7 +357,6 @@ function OrderCard({
       >
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
-        {/* Header */}
         <div className="flex justify-between items-start mb-5">
           <div>
             <span className="text-[10px] font-black text-accent uppercase tracking-widest">
@@ -388,7 +370,6 @@ function OrderCard({
           <StatusBadge status={order.status} />
         </div>
 
-        {/* Items preview */}
         <div className="space-y-1.5 mb-5 min-h-[48px]">
           {order.order_items?.slice(0, 2).map((item) => (
             <div
@@ -412,7 +393,6 @@ function OrderCard({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-border mb-4">
           <span className="text-xs text-text-muted font-medium">
             {order.payment_method === "pix"
@@ -428,7 +408,6 @@ function OrderCard({
           </span>
         </div>
 
-        {/* Actions */}
         {!compact && (
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -476,7 +455,6 @@ function OrderCard({
         )}
       </div>
 
-      {/* Drawer de detalhes */}
       {showDetails && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div
@@ -501,7 +479,6 @@ function OrderCard({
               </button>
             </div>
 
-            {/* Cliente */}
             <div className="mb-6 p-5 rounded-2xl bg-surface-alt border border-border">
               <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-3">
                 Cliente
@@ -522,7 +499,6 @@ function OrderCard({
               </a>
             </div>
 
-            {/* Endereço */}
             {order.delivery_address && (
               <div className="mb-6 p-5 rounded-2xl bg-surface-alt border border-border">
                 <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-3">
@@ -546,7 +522,6 @@ function OrderCard({
               </div>
             )}
 
-            {/* Itens */}
             <div className="mb-6">
               <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-3">
                 Itens
@@ -587,7 +562,6 @@ function OrderCard({
               </div>
             </div>
 
-            {/* Observação geral */}
             {order.observation && (
               <div className="mb-6 p-4 rounded-xl border border-border bg-surface-alt">
                 <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">
@@ -599,7 +573,6 @@ function OrderCard({
               </div>
             )}
 
-            {/* Totais */}
             <div className="pt-5 border-t border-border space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">Subtotal</span>
@@ -621,7 +594,6 @@ function OrderCard({
               </div>
             </div>
 
-            {/* Ações no drawer */}
             {hasNext && (
               <button
                 onClick={() => {
