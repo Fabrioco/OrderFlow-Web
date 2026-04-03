@@ -150,22 +150,25 @@ export default function MenuManagement() {
   useEffect(() => {
     async function init() {
       setLoading(true);
-      const { data: tenant } = await supabase
+      // Buscamos sem o .single() para evitar o erro de coerção se não achar nada
+      const { data, error } = await supabase
         .from("tenants")
         .select("id")
-        .eq("slug", slug)
-        .single();
-      if (!tenant) {
+        .eq("slug", slug);
+
+      if (error || !data || data.length === 0) {
+        console.error("Estabelecimento não encontrado");
         setLoading(false);
         return;
       }
+
+      const tenant = data[0];
       setTenantId(tenant.id);
       await fetchData(tenant.id);
       setLoading(false);
     }
     init();
   }, [slug]);
-
   /* ── Product CRUD ── */
   function openCreateProduct() {
     setEditingProduct(null);
@@ -188,6 +191,10 @@ export default function MenuManagement() {
   }
 
   async function saveProduct() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    console.log(user);
     if (!productForm.name || !productForm.price) {
       toast.error("Nome e preço são obrigatórios.");
       return;
@@ -195,8 +202,8 @@ export default function MenuManagement() {
     if (!tenantId) return;
     setSavingProduct(true);
     try {
-      const payload = {
-        tenant_id: tenantId,
+      // 1. Criamos o payload BASE
+      const basePayload = {
         name: productForm.name.trim(),
         description: productForm.description.trim() || null,
         price: parseFloat(productForm.price),
@@ -207,28 +214,49 @@ export default function MenuManagement() {
       };
 
       if (editingProduct) {
-        const { error } = await supabase
+        // 2. No UPDATE, não enviamos o tenant_id (evita bloqueio de RLS)
+        const { data, error } = await supabase
           .from("products")
-          .update(payload)
-          .eq("id", editingProduct.id);
+          .update(basePayload)
+          .eq("id", editingProduct.id)
+          .eq("tenant_id", tenantId) // 🔥 IMPORTANTE
+          .select();
+
         if (error) throw error;
+
+        if (!data || data.length === 0) {
+          throw new Error("RLS bloqueou o update (verifique policies)");
+        }
+        console.log("Produto atualizado com sucesso:", data);
+
+        if (!data || data.length === 0) {
+          throw new Error(
+            "Não foi possível atualizar o produto. Verifique as permissões.",
+          );
+        }
+
         toast.success("Produto atualizado!");
       } else {
-        const { error } = await supabase.from("products").insert(payload);
+        // 3. No INSERT, incluímos o tenant_id obrigatoriamente
+        const { error } = await supabase
+          .from("products")
+          .insert({ ...basePayload, tenant_id: tenantId });
+
         if (error) throw error;
         toast.success("Produto criado!");
       }
 
       setProductModal(false);
+      // 4. Importante: Limpar o estado do produto editado
+      setEditingProduct(null);
       await fetchData();
-    } catch (err) {
-      toast.error("Erro ao salvar produto.");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar produto.");
       console.error(err);
     } finally {
       setSavingProduct(false);
     }
   }
-
   async function toggleAvailability(id: string, current: boolean) {
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, is_available: !current } : p)),
