@@ -94,6 +94,14 @@ const PAYMENT_LABELS: Record<string, { label: string; icon: React.ReactNode }> =
       label: "Dinheiro — na entrega",
       icon: <Money size={20} weight="duotone" />,
     },
+    credit_card: {
+      label: "Cartão de Crédito",
+      icon: <CreditCard size={20} weight="duotone" />,
+    },
+    debit_card: {
+      label: "Cartão de Débito",
+      icon: <CreditCard size={20} weight="duotone" />,
+    },
   };
 
 /* ── Component ───────────────────────────────────────────────── */
@@ -233,15 +241,46 @@ export default function MenuPage() {
     return true;
   }
 
+  const getErrorMessage = (detail: string) => {
+    switch (detail) {
+      case "cc_rejected_high_risk":
+        return "Pagamento recusado por segurança. Tente outro cartão.";
+      case "cc_rejected_insufficient_amount":
+        return "Saldo insuficiente.";
+      case "cc_rejected_bad_filled_card_number":
+        return "Número do cartão inválido.";
+      default:
+        return "Pagamento recusado.";
+    }
+  };
+
   /* ── Checkout ─────────────────────────────────────────────────
      mpFormData vem do brick quando o pagamento é cartão.
      Para PIX e dinheiro, é undefined.
   ── */
   async function handleCheckout(mpFormData?: any) {
     if (!validateInfo() || !tenant) return;
+
     setProcessing(true);
 
+    // ✅ DEBUG REAL
+    console.log("📦 mpFormData recebido:");
+    console.log(JSON.stringify(mpFormData, null, 2));
+
     try {
+      // 🔥 GARANTE SERIALIZAÇÃO LIMPA
+      const cleanFormData = mpFormData
+        ? JSON.parse(JSON.stringify(mpFormData))
+        : null;
+
+      console.log("🧼 cleanFormData:");
+      console.log(JSON.stringify(cleanFormData, null, 2));
+
+      // ❌ BLOQUEIA se estiver vazio (cartão exige isso)
+      if (isCardPayment && !cleanFormData?.payer?.email) {
+        throw new Error("Dados do pagador não preenchidos.");
+      }
+
       const res = await fetch("/api/mp/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -264,29 +303,34 @@ export default function MenuPage() {
             },
           },
           items: cart.map((i) => ({
+            id: i.id,
             title: i.name,
             unit_price: i.price,
             quantity: i.quantity,
           })),
           use_mp: isCardPayment,
-          mp_form_data: mpFormData ?? null,
+          mp_form_data: cleanFormData,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok || json.error)
-        throw new Error(json.error ?? "Erro no checkout");
 
-      console.log(json);
+      console.log("📡 RESPONSE BACKEND:", json);
+
+      if (!res.ok || json.error) {
+        const message = getErrorMessage(json.error?.detail);
+        throw new Error(message);
+      }
+
       toast.success("Pedido realizado com sucesso!");
       router.push(`/${slug}/meus-pedidos/${json.orderId}`);
     } catch (err: any) {
+      console.error("❌ CHECKOUT ERROR:", err);
       toast.error(err.message);
     } finally {
       setProcessing(false);
     }
   }
-
   /* ── Categories ── */
   const categories = [
     "Todos",
@@ -737,6 +781,21 @@ export default function MenuPage() {
                               minInstallments: 1,
                               maxInstallments: 1,
                             },
+                            fields: {
+                              payer: {
+                                email: {
+                                  required: true,
+                                },
+                                identification: {
+                                  type: {
+                                    required: true,
+                                  },
+                                  number: {
+                                    required: true,
+                                  },
+                                },
+                              },
+                            },
                             visual: {
                               style: {
                                 theme: "dark",
@@ -755,9 +814,27 @@ export default function MenuPage() {
                             },
                           }}
                           onSubmit={async (param) => {
-                            // Verifique se o dado está vindo direto no parâmetro
-                            // O Brick de Card Payment geralmente retorna o objeto pronto para o backend
-                            await handleCheckout(param);
+                            console.log("🔥 PARAM RAW:", param);
+
+                            // 🔥 NORMALIZAÇÃO (ESSENCIAL)
+                            const payload = {
+                              token: param.token,
+                              payment_method_id: param.payment_method_id,
+                              issuer_id: param.issuer_id,
+                              installments: param.installments,
+                              payer: {
+                                email: param.payer?.email,
+                                identification: {
+                                  type:
+                                    param.payer?.identification?.type || "CPF",
+                                  number: param.payer?.identification?.number,
+                                },
+                              },
+                            };
+
+                            console.log("🧼 PAYLOAD FINAL:", payload);
+
+                            await handleCheckout(payload);
                           }}
                           onError={(error) => {
                             console.error("MP Brick error:", error);
