@@ -133,7 +133,6 @@ export default function SettingsProfilePage() {
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState("");
   const [logoPreview, setLogoPreview] = useState("");
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── Load ── */
@@ -247,20 +246,14 @@ export default function SettingsProfilePage() {
       z.map((zone, idx) => (idx === i ? { ...zone, [field]: value } : zone)),
     );
   }
-
-  function showToast(msg: string, ok = true) {
-    setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3000);
-  }
-
   /* ── Save ── */
   async function handleSave() {
     if (!form.name || !form.slug) {
-      showToast("Preencha nome e endereço", false);
+      toast.error("Preencha nome e endereço");
       return;
     }
     if (slugError) {
-      showToast("Corrija o endereço antes de salvar", false);
+      toast.error("Corrija o endereço antes de salvar");
       return;
     }
     setSaving(true);
@@ -322,10 +315,10 @@ export default function SettingsProfilePage() {
             })),
           );
       }
-      showToast("Salvo com sucesso!");
+      toast.success("Salvo com sucesso!");
     } catch (e) {
       console.error(e);
-      showToast("Erro ao salvar. Tente novamente.", false);
+      toast.error("Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -341,6 +334,47 @@ export default function SettingsProfilePage() {
   ).length;
   const activeIndex = SECTIONS.findIndex((s) => s.key === active);
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // validação simples
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem válida");
+      return;
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${tenantId || "temp"}/${Date.now()}.${fileExt}`;
+
+    toast.promise(
+      async () => {
+        const { error } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, {
+            upsert: true,
+            cacheControl: "3600",
+          });
+
+        if (error) throw error;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(fileName);
+
+        // evita cache agressivo do browser
+        const finalUrl = `${publicUrl}?t=${Date.now()}`;
+
+        setForm((f) => ({ ...f, logo_url: finalUrl }));
+        setLogoPreview(finalUrl);
+      },
+      {
+        loading: "Enviando logo...",
+        success: "Logo carregada!",
+        error: "Erro ao enviar imagem.",
+      },
+    );
+  };
   /* ── Render ── */
   return (
     <div className="min-h-screen bg-bg text-text font-sans selection:bg-accent/30 relative">
@@ -501,15 +535,29 @@ export default function SettingsProfilePage() {
                   <p className="text-sm font-semibold text-text mb-1.5">
                     Logo da lanchonete
                   </p>
-                  <input
-                    className={inputCls}
-                    placeholder="Cole o link de uma imagem..."
-                    value={form.logo_url}
-                    onChange={(e) => {
-                      setForm((f) => ({ ...f, logo_url: e.target.value }));
-                      setLogoPreview(e.target.value);
-                    }}
-                  />
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold cursor-pointer hover:brightness-110 transition">
+                      Enviar imagem
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                      />
+                    </label>
+
+                    {logoPreview && (
+                      <button
+                        onClick={() => {
+                          setForm((f) => ({ ...f, logo_url: "" }));
+                          setLogoPreview("");
+                        }}
+                        className="text-xs text-red-400 font-semibold"
+                      >
+                        Remover imagem
+                      </button>
+                    )}
+                  </div>{" "}
                   <p className="text-xs text-text-muted mt-1.5">
                     Upload por arquivo em breve.
                   </p>
@@ -837,18 +885,6 @@ export default function SettingsProfilePage() {
           )}
         </main>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl text-sm font-semibold shadow-xl pointer-events-none z-50 ${
-            toast.ok ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
-          }`}
-        >
-          {toast.ok ? "✓ " : "⚠ "}
-          {toast.msg}
-        </div>
-      )}
     </div>
   );
 }
