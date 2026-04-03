@@ -18,6 +18,7 @@ import {
   QrCode,
   CheckCircle,
 } from "@phosphor-icons/react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -156,7 +157,7 @@ export default function SettingsPage() {
   };
 
   const handleCopyLink = () => {
-    const fullUrl = `${window.location.origin}/${formData.slug}`;
+    const fullUrl = `${window.location.origin}/${formData.slug}/cardapio`;
     navigator.clipboard.writeText(fullUrl);
     toast.success("Link do cardápio copiado!");
   };
@@ -195,6 +196,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
             {/* --- SEÇÃO 1: IDENTIDADE --- */}
+            {/* --- SEÇÃO 1: IDENTIDADE --- */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
                 <Storefront
@@ -204,19 +206,22 @@ export default function SettingsPage() {
                 />
                 <h2 className="font-bold">Identidade & URL</h2>
               </div>
-              <div className="p-8 space-y-8">
-                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-                  <div className="relative group shrink-0">
-                    <div className="w-32 h-32 rounded-3xl overflow-hidden bg-bg border-2 border-dashed border-border group-hover:border-accent/50 transition-all flex items-center justify-center">
+
+              <div className="p-8 space-y-10">
+                {/* LOGO */}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-36 h-36 rounded-3xl overflow-hidden bg-bg border-2 border-dashed border-border group-hover:border-accent/50 transition-all flex items-center justify-center">
                       {formData.logo_url ? (
-                        <img
+                        <Image
+                          fill
                           src={formData.logo_url}
-                          className="w-full h-full object-cover"
-                        />
+                          className="w-full h-full object-cover" alt={""}                        />
                       ) : (
                         <ImageIcon size={40} className="text-text-muted" />
                       )}
                     </div>
+
                     <label className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-all">
                       <CameraIcon size={20} />
                       <input
@@ -227,69 +232,80 @@ export default function SettingsPage() {
                       />
                     </label>
                   </div>
-                  <div className="flex-1 w-full space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-text-muted ml-1">
-                          Nome da Loja
-                        </label>
-                        <input
-                          value={formData.name}
-                          onChange={(e) =>
-                            setFormData({ ...formData, name: e.target.value })
-                          }
-                          className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-text-muted ml-1">
-                          Link (Slug)
-                        </label>
-                        <div className="flex items-center bg-bg border border-border rounded-xl px-4 py-3 focus-within:border-accent">
-                          <span className="text-sm font-bold text-text-muted">
-                            {process.env.NEXT_PUBLIC_URL}/
-                          </span>
-                          <input
-                            value={formData.slug}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                slug: e.target.value
-                                  .toLowerCase()
-                                  .replace(/\s+/g, "-"),
-                              })
-                            }
-                            className="bg-transparent text-sm w-full outline-none font-bold"
-                          />
-                          <button onClick={handleCopyLink}>
-                            <CopyIcon
-                              size={18}
-                              className="text-text-muted hover:text-accent"
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-text-muted ml-1">
-                        Bio / Descrição
-                      </label>
-                      <textarea
-                        value={formData.description}
+                </div>
+
+                {/* FORM */}
+                <div className="w-full max-w-2xl mx-auto space-y-6">
+                  {/* Nome */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                      Nome da Loja
+                    </label>
+                    <input
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-4 text-sm focus:border-accent outline-none"
+                    />
+                  </div>
+
+                  {/* Slug */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                      Link (Slug)
+                    </label>
+
+                    <div className="flex items-center gap-2 bg-bg border border-border rounded-xl px-4 py-4 focus-within:border-accent overflow-hidden">
+                      <span className="text-sm font-bold text-text-muted whitespace-nowrap truncate max-w-[45%]">
+                        {process.env.NEXT_PUBLIC_URL}/
+                      </span>
+
+                      <input
+                        value={formData.slug}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            description: e.target.value,
+                            slug: e.target.value
+                              .toLowerCase()
+                              .replace(/\s+/g, "-"),
                           })
                         }
-                        className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm h-20 resize-none outline-none"
+                        className="flex-1 min-w-0 bg-transparent text-sm outline-none font-bold"
                       />
+
+                      <span className="text-sm font-bold text-text-muted whitespace-nowrap truncate max-w-[45%]">
+                        cardapio/
+                      </span>
+
+                      <button onClick={handleCopyLink} className="shrink-0">
+                        <CopyIcon
+                          size={18}
+                          className="text-text-muted hover:text-accent"
+                        />
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Descrição */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                      Bio / Descrição
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-4 text-sm h-28 resize-none outline-none"
+                    />
                   </div>
                 </div>
               </div>
             </div>
-
             {/* --- SEÇÃO 2: LOCALIZAÇÃO & CONTATO --- */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
@@ -366,8 +382,7 @@ export default function SettingsPage() {
                               ? "PIX Manual"
                               : method === "card_on_delivery"
                                 ? "Cartão na Entrega"
-                                : "Cartão de Crédito/Débito"
-                          }
+                                : "Cartão de Crédito/Débito"}
                         </button>
                       ),
                     )}
@@ -491,23 +506,23 @@ export default function SettingsPage() {
 
             {/* PLANO ATUAL */}
             {/* <div className="p-6 rounded-3xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20">
-              <p className="text-[10px] font-black uppercase text-accent mb-2">
-                Plano Atual
-              </p>
-              <h4 className="text-xl font-bold capitalize">
-                {settings?.plan || "Free"}
-              </h4>
-              <p className="text-[11px] text-text-secondary mt-2 leading-relaxed">
-                {settings?.plan === "free"
-                  ? "Você está no plano gratuito. Faça o upgrade para remover taxas de transação."
-                  : "Você possui todos os recursos liberados."}
-              </p>
-              {settings?.plan === "free" && (
-                <button className="w-full mt-4 py-3 rounded-xl bg-accent text-white text-[10px] font-black uppercase tracking-widest">
-                  Mudar de Plano
-                </button>
-              )}
-            </div> */}
+                <p className="text-[10px] font-black uppercase text-accent mb-2">
+                  Plano Atual
+                </p>
+                <h4 className="text-xl font-bold capitalize">
+                  {settings?.plan || "Free"}
+                </h4>
+                <p className="text-[11px] text-text-secondary mt-2 leading-relaxed">
+                  {settings?.plan === "free"
+                    ? "Você está no plano gratuito. Faça o upgrade para remover taxas de transação."
+                    : "Você possui todos os recursos liberados."}
+                </p>
+                {settings?.plan === "free" && (
+                  <button className="w-full mt-4 py-3 rounded-xl bg-accent text-white text-[10px] font-black uppercase tracking-widest">
+                    Mudar de Plano
+                  </button>
+                )}
+              </div> */}
           </div>
         </div>
       </section>
