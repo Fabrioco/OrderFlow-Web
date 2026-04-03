@@ -3,17 +3,20 @@ import {
   Receipt,
   CookingPot,
   Gear,
-  Plus,
   Question,
   SignOut,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; // Importe useRouter
+import { getSupabase } from "@/utils/supabase/client"; // Use seu helper de client
+import { toast } from "sonner";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = getSupabase();
 
-  // Extrai o slug da URL (ex: /nome-da-loja/painel/pedidos -> nome-da-loja)
+  // Extrai o slug da URL
   const segments = pathname.split("/");
   const slug = segments[1];
 
@@ -35,6 +38,25 @@ export function Sidebar() {
     },
   ];
 
+  /* ── Lógica de Logout ────────────────────────────────────────── */
+  async function handleLogout() {
+    toast.promise(
+      async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+
+        // Redireciona para o login e limpa o histórico
+        router.replace("/login");
+        router.refresh(); // Garante que o middleware rode novamente
+      },
+      {
+        loading: "Saindo...",
+        success: "Até logo!",
+        error: "Erro ao sair. Tente novamente.",
+      },
+    );
+  }
+
   return (
     <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-surface border-r border-border p-6 lg:flex z-40">
       <div className="mb-10 text-xl font-bold tracking-tighter text-accent uppercase">
@@ -43,7 +65,6 @@ export function Sidebar() {
 
       <nav className="flex-1 space-y-2">
         {menuItems.map((item) => {
-          // Verifica se a rota atual começa com o path do item
           const isActive = pathname === item.path;
 
           return (
@@ -69,14 +90,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Botão de Ação Rápida */}
-      <button className="mb-8 flex items-center justify-center gap-2 rounded-xl bg-accent py-4 font-bold text-white shadow-lg shadow-accent/20 transition-all hover:brightness-110 active:scale-[0.98]">
-        <Plus size={20} weight="bold" />
-        <span className="text-xs uppercase tracking-widest font-black">
-          Novo Pedido
-        </span>
-      </button>
-
       {/* Footer da Sidebar */}
       <div className="space-y-1 border-t border-border pt-6">
         <Link
@@ -92,15 +105,14 @@ export function Sidebar() {
           </span>
         </Link>
 
+        {/* Botão de Logout Atualizado */}
         <button
-          onClick={() => {
-            /* Lógica de Logout */
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-danger transition-colors group"
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-red-400 transition-colors group"
         >
           <SignOut
             size={18}
-            className="group-hover:text-danger transition-colors"
+            className="group-hover:text-red-400 transition-colors"
           />
           <span className="text-[10px] font-black uppercase tracking-[0.15em]">
             Sair
