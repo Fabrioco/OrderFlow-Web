@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { format, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -95,54 +96,56 @@ export default function Dashboard() {
   const { tenant } = useTenant(slug);
   const supabase = createClient();
 
-  const [tenantId, setTenantId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Usa diretamente o tenant.id do hook — sem estado separado que nunca era preenchido
+  const tenantId = tenant?.id ?? null;
+
   /* ── Fetch ── */
-  const fetchOrders = useCallback(
-    async (tid?: string) => {
-      const id = tid ?? tenantId;
-      if (!id) return;
-      try {
-        // Define o início do dia atual para o filtro
-        const todayStart = startOfDay(new Date()).toISOString();
+  const fetchOrders = useCallback(async () => {
+    if (!tenantId) return;
+    try {
+      const todayStart = startOfDay(new Date()).toISOString();
 
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*, customers(name, phone), order_items(*)")
-          .eq("tenant_id", id)
-          .gte("created_at", todayStart) // Filtro para ignorar dias anteriores
-          .order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, customers(name, phone), order_items(*)")
+        .eq("tenant_id", tenantId)
+        .gte("created_at", todayStart)
+        .order("created_at", { ascending: false });
 
-        if (error) throw error;
-        setOrders((data as Order[]) ?? []);
-      } catch (err) {
-        console.error("Erro ao buscar pedidos:", err);
-      }
-    },
-    [tenantId, supabase],
-  );
+      if (error) throw error;
+      setOrders((data as Order[]) ?? []);
+    } catch (err) {
+      console.error("Erro ao buscar pedidos:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId, supabase]);
 
-  /* ── Init + Realtime ── */
+  /* ── Busca inicial quando tenantId estiver disponível ── */
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  /* ── Realtime ── */
   useEffect(() => {
     if (!tenantId) return;
 
     const channel = supabase
-      .channel(`realtime:orders:${tenantId}`) // Nome único para o canal
+      .channel(`realtime:orders:${tenantId}`)
       .on(
         "postgres_changes",
         {
-          event: "*", // Ouve INSERT, UPDATE e DELETE
+          event: "*",
           schema: "public",
           table: "orders",
-          // Remova o filter temporariamente para testar se é ele quem está bloqueando
-          // Se funcionar sem, o problema é a sintaxe do filtro ou permissão de RLS
           filter: `tenant_id=eq.${tenantId}`,
         },
         (payload) => {
           console.log("Mudança detectada!", payload);
-          fetchOrders(tenantId);
+          fetchOrders();
         },
       )
       .subscribe((status) => {
@@ -152,8 +155,8 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, slug, fetchOrders, supabase]);
-  
+  }, [tenantId, fetchOrders, supabase]);
+
   /* ── Update status ── */
   const handleUpdateStatus = useCallback(
     async (orderId: string, currentStatus: OrderStatus) => {
@@ -209,7 +212,6 @@ export default function Dashboard() {
     ["delivered", "cancelled"].includes(o.status),
   );
 
-  // Soma apenas os pedidos carregados (que já são de hoje)
   const totalDay = orders
     .filter((o) => o.status !== "cancelled")
     .reduce((acc, o) => acc + Number(o.total), 0);
@@ -225,7 +227,7 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
       <div className="bg-noise pointer-events-none" />
-      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-250 h-150 bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
       <Sidebar />
 
@@ -328,6 +330,9 @@ export default function Dashboard() {
           </>
         )}
       </section>
+
+      {/* Banner de instalação do PWA */}
+      <PwaInstallBanner />
     </main>
   );
 }
@@ -355,7 +360,7 @@ function OrderCard({
       <div
         className={`p-6 rounded-3xl border border-border bg-surface shadow-xl hover:border-accent/30 transition-all relative overflow-hidden group ${compact ? "opacity-60 hover:opacity-100" : ""}`}
       >
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-accent/40 to-transparent" />
 
         <div className="flex justify-between items-start mb-5">
           <div>
@@ -363,14 +368,14 @@ function OrderCard({
               #{String(order.order_number).padStart(4, "0")} ·{" "}
               {format(new Date(order.created_at), "HH:mm")}
             </span>
-            <h3 className="text-lg font-bold text-text mt-0.5 truncate max-w-[180px]">
+            <h3 className="text-lg font-bold text-text mt-0.5 truncate max-w-45">
               {order.customers?.name ?? "Cliente"}
             </h3>
           </div>
           <StatusBadge status={order.status} />
         </div>
 
-        <div className="space-y-1.5 mb-5 min-h-[48px]">
+        <div className="space-y-1.5 mb-5 min-h-12">
           {order.order_items?.slice(0, 2).map((item) => (
             <div
               key={item.id}
@@ -456,7 +461,7 @@ function OrderCard({
       </div>
 
       {showDetails && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
+        <div className="fixed inset-0 z-100 flex justify-end">
           <div
             className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
             onClick={() => setShowDetails(false)}
