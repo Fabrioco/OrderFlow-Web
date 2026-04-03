@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   ImageIcon,
   CameraIcon,
+  CopyIcon,
 } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -153,6 +154,17 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
+  const handleCopyLink = () => {
+    const fullUrl = `${window.location.origin}/${slug}`;
+
+    navigator.clipboard.writeText(fullUrl);
+
+    toast.success("Link copiado para a área de transferência!", {
+      description: fullUrl,
+      icon: <CopyIcon size={16} weight="bold" />,
+    });
+  };
+
   if (!settings) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -186,123 +198,143 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
-            <div className="bg-surface border border-border rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center justify-between mb-8">
+            {/* --- PERFIL DO ESTABELECIMENTO --- */}
+            <div className="bg-surface border border-border rounded-3xl shadow-2xl relative overflow-hidden flex flex-col">
+              {/* Header da Seção */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 md:p-8 border-b border-border/50 bg-surface-alt/20">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
                     <Storefront size={24} weight="duotone" />
                   </div>
-                  <h2 className="text-xl font-bold text-text">
-                    Perfil do Estabelecimento
-                  </h2>
+                  <div>
+                    <h2 className="text-xl font-bold text-text">
+                      Perfil do Estabelecimento
+                    </h2>
+                    <p className="text-xs text-text-muted">
+                      Como sua marca aparece para os clientes
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleUpdateProfile}
                   disabled={isUpdating}
-                  className="text-xs font-black uppercase tracking-widest text-accent hover:brightness-125 transition-all disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-accent text-white text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-accent/20"
                 >
                   {isUpdating ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col sm:flex-row items-center gap-6 mb-10 p-6 rounded-3xl bg-surface-alt/50 border border-border/50">
-                  <div className="relative group">
-                    {/* Preview da Imagem */}
-                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-bg border border-border group-hover:border-accent/50 transition-all shadow-inner flex items-center justify-center">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
+              <div className="p-6 md:p-8 space-y-8">
+                {/* Avatar e Infos Principais */}
+                <div className="flex flex-col xl:flex-row gap-8">
+                  {/* Container da Foto */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="relative group">
+                      <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden bg-bg border-2 border-dashed border-border group-hover:border-accent/50 transition-all flex items-center justify-center shadow-inner">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 text-text-muted">
+                            <ImageIcon size={40} weight="duotone" />
+                            <span className="text-[10px] font-bold uppercase">
+                              Sem Logo
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <label className="absolute -bottom-3 -right-3 w-12 h-12 rounded-2xl bg-accent text-white flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all border-4 border-surface">
+                        <CameraIcon size={22} weight="bold" />
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleUploadLogo}
+                          disabled={isUpdating}
                         />
-                      ) : (
-                        <ImageIcon
-                          size={32}
-                          weight="duotone"
-                          className="text-text-muted"
-                        />
-                      )}
+                      </label>
                     </div>
 
-                    {/* Botão de Upload (Ícone de Câmera) */}
-                    <label className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 active:scale-95 transition-all">
-                      <CameraIcon size={20} weight="bold" />
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleUploadLogo}
-                        disabled={isUpdating}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex-1 text-center sm:text-left">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-text">
-                      Foto do Perfil
-                    </h3>
-                    <p className="text-xs text-text-muted mt-1 max-w-[240px]">
-                      Aparece no cardápio e checkout. Use uma imagem quadrada
-                      para melhor resultado.
-                    </p>
                     {imageUrl && (
                       <button
                         onClick={() => setImageUrl("")}
-                        className="mt-3 text-[10px] font-bold uppercase text-danger/70 hover:text-danger transition-colors"
+                        className="mt-4 text-[10px] font-black uppercase text-red-400 hover:text-red-500 transition-colors"
                       >
                         Remover imagem
                       </button>
                     )}
                   </div>
-                </div>{" "}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">
-                    Nome da Loja
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none transition-all"
-                    placeholder="Ex: Obsidian Burger"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">
-                    URL Personalizada
-                  </label>
-                  <div className="flex items-center bg-bg border border-border rounded-xl px-4 py-3 focus-within:border-accent">
-                    <span className="text-text-muted text-xs mr-1">
-                      orderflow.vercel.app/
-                    </span>
-                    <input
-                      value={slug}
-                      onChange={(e) => {
-                        const sanitized = e.target.value
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")
-                          .replace(/[^\w-]+/g, "");
-                        setSlug(sanitized);
-                      }}
-                      className="bg-transparent border-none outline-none text-sm w-full font-medium"
-                    />
+
+                  {/* Inputs Principais ao lado da foto no Desktop */}
+                  <div className="flex-1 grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">
+                        Nome da Loja
+                      </label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full bg-bg border border-border rounded-2xl px-5 py-4 text-sm focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all"
+                        placeholder="Ex: Obsidian Burger"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">
+                        URL do Cardápio Digital
+                      </label>
+                      <div className="group relative flex items-center bg-bg border border-border rounded-2xl focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/5 transition-all overflow-hidden">
+                        <div className="hidden sm:flex items-center px-4 bg-surface-alt border-r border-border h-full text-text-muted text-xs font-medium bg-transparent">
+                          orderflow.vercel.app/
+                        </div>
+                        <input
+                          value={slug}
+                          onChange={(e) => {
+                            const sanitized = e.target.value
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")
+                              .replace(/[^\w-]+/g, "");
+                            setSlug(sanitized);
+                          }}
+                          className="bg-transparent border-none outline-none text-sm w-full font-bold px-4 py-4"
+                          placeholder="seu-nome"
+                        />
+                        <button
+                          onClick={handleCopyLink}
+                          type="button"
+                          className="absolute right-2 p-2.5 rounded-xl bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent/30 transition-all active:scale-90"
+                        >
+                          <CopyIcon size={20} weight="duotone" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">
-                    Bio / Descrição Curta
+
+                {/* Descrição em largura total */}
+                <div className="space-y-2 pt-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">
+                    Descrição da Lanchonete (Bio)
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none transition-all h-24 resize-none"
-                    placeholder="Conte um pouco sobre sua loja..."
+                    className="w-full bg-bg border border-border rounded-2xl px-5 py-4 text-sm focus:border-accent focus:ring-4 focus:ring-accent/5 outline-none transition-all h-32 resize-none leading-relaxed"
+                    placeholder="Conte um pouco sobre sua loja, especialidades e o que os clientes podem esperar..."
                   />
+                  <div className="flex justify-end">
+                    <span className="text-[10px] text-text-muted font-medium italic">
+                      Aparece abaixo do nome no seu cardápio
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-
             <div className="bg-surface border border-border rounded-3xl p-8 shadow-2xl">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
