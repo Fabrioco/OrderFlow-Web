@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   // --- LÓGICA DE PROTEÇÃO DO ORDERFLOW ---
-  const isPainelRoute = request.nextUrl.pathname.includes("/painel");
+  const isPainelRoute = request.nextUrl.pathname.includes("/painel/pedidos");
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
 
   if ((isPainelRoute || isAdminRoute) && !session) {
@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
       userTenantSlug !== urlSlug
     ) {
       return NextResponse.redirect(
-        new URL(`/${userTenantSlug}/painel`, request.url),
+        new URL(`/${userTenantSlug}/painel/pedidos`, request.url),
       );
     }
 
