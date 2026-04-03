@@ -13,6 +13,8 @@ import {
   CheckCircle,
   Clock,
   ShieldCheck,
+  ImageIcon,
+  CameraIcon,
 } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -30,6 +32,7 @@ export default function SettingsPage() {
 
   // Estados para o perfil
   const [name, setName] = useState(settings?.name || "");
+  const [imageUrl, setImageUrl] = useState(settings?.image_url || "");
   const [slug, setSlug] = useState(settings?.slug || "");
   const [description, setDescription] = useState(settings?.description || "");
 
@@ -95,6 +98,61 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
+  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !settings?.id) return;
+
+    // Gerar um nome de arquivo único para evitar cache do navegador
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${settings.id}/logo-${Date.now()}.${fileExt}`;
+
+    toast.promise(
+      async () => {
+        setIsUpdating(true);
+
+        // 1. Upload para o bucket 'avatars'
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // 2. Pegar a URL pública
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(fileName);
+
+        // 3. Atualizar a tabela tenants no banco de dados
+        const { error: updateError } = await supabase
+          .from("tenants")
+          .update({ logo_url: publicUrl })
+          .eq("id", settings.id);
+
+        if (updateError) throw updateError;
+
+        setImageUrl(publicUrl);
+        setIsUpdating(false);
+      },
+      {
+        loading: "Enviando imagem...",
+        success: "Logótipo atualizado com sucesso!",
+        error: (err) => `Erro: ${err.message}`,
+      },
+    );
+  };
+  useEffect(() => {
+    if (settings) {
+      setIsStoreOpen(settings.is_open);
+      setName(settings.name || "");
+      setSlug(settings.slug || "");
+      setDescription(settings.description || "");
+      setImageUrl(settings.logo_url || ""); // Adicione esta linha
+    }
+  }, [settings]);
+
   if (!settings) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -148,6 +206,56 @@ export default function SettingsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col sm:flex-row items-center gap-6 mb-10 p-6 rounded-3xl bg-surface-alt/50 border border-border/50">
+                  <div className="relative group">
+                    {/* Preview da Imagem */}
+                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-bg border border-border group-hover:border-accent/50 transition-all shadow-inner flex items-center justify-center">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon
+                          size={32}
+                          weight="duotone"
+                          className="text-text-muted"
+                        />
+                      )}
+                    </div>
+
+                    {/* Botão de Upload (Ícone de Câmera) */}
+                    <label className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 active:scale-95 transition-all">
+                      <CameraIcon size={20} weight="bold" />
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleUploadLogo}
+                        disabled={isUpdating}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-text">
+                      Foto do Perfil
+                    </h3>
+                    <p className="text-xs text-text-muted mt-1 max-w-[240px]">
+                      Aparece no cardápio e checkout. Use uma imagem quadrada
+                      para melhor resultado.
+                    </p>
+                    {imageUrl && (
+                      <button
+                        onClick={() => setImageUrl("")}
+                        className="mt-3 text-[10px] font-bold uppercase text-danger/70 hover:text-danger transition-colors"
+                      >
+                        Remover imagem
+                      </button>
+                    )}
+                  </div>
+                </div>{" "}
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">
                     Nome da Loja
