@@ -359,6 +359,39 @@ export default function MenuManagement() {
       ? products
       : products.filter((p) => p.category_id === activeCategory);
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !tenantId) return;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${tenantId}/${Math.random()}.${fileExt}`; // Pasta por tenant
+    const filePath = `${fileName}`;
+
+    toast.promise(
+      async () => {
+        const { data, error } = await supabase.storage
+          .from("products")
+          .upload(filePath, file, {
+            upsert: true,
+          });
+
+        if (error) throw error;
+
+        // Pega a URL pública
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("products").getPublicUrl(filePath);
+
+        setProductForm((f) => ({ ...f, image_url: publicUrl }));
+      },
+      {
+        loading: "Enviando imagem...",
+        success: "Imagem enviada com sucesso!",
+        error: "Erro ao enviar imagem.",
+      },
+    );
+  }
+
   /* ── Render ── */
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
@@ -772,15 +805,46 @@ export default function MenuManagement() {
                 )}
               </div>
 
-              <FormField label="URL da imagem">
-                <input
-                  className={inputCls}
-                  placeholder="https://..."
-                  value={productForm.image_url}
-                  onChange={(e) =>
-                    setProductForm((f) => ({ ...f, image_url: e.target.value }))
-                  }
-                />
+              {/* Substitua o FormField de "URL da imagem" por este: */}
+              <FormField label="Foto do Produto">
+                <div className="flex flex-col gap-3">
+                  {/* Botão de Upload Customizado */}
+                  <label className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-border rounded-xl bg-surface-alt hover:border-accent/60 cursor-pointer transition-all group">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                    />
+                    <ImageIcon
+                      size={20}
+                      className="text-text-muted group-hover:text-accent"
+                    />
+                    <span className="text-sm font-bold text-text-secondary group-hover:text-text">
+                      {productForm.image_url
+                        ? "Alterar foto"
+                        : "Fazer upload da foto"}
+                    </span>
+                  </label>
+
+                  {/* Input de texto escondido ou pequeno apenas para conferência (opcional) */}
+                  {productForm.image_url && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <Check size={14} className="text-green-500" />
+                      <span className="text-[10px] text-green-500 font-bold uppercase truncate max-w-[200px]">
+                        Imagem pronta para salvar
+                      </span>
+                      <button
+                        onClick={() =>
+                          setProductForm((f) => ({ ...f, image_url: "" }))
+                        }
+                        className="ml-auto text-red-400 hover:text-red-500"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </FormField>
 
               <FormField label="Nome *">
