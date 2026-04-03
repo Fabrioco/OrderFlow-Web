@@ -433,7 +433,7 @@ export default function MenuPage() {
 
       {/* Floating cart button */}
       {cart.length > 0 && !isCartOpen && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-lg z-50">
+        <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-lg z-50">
           <button
             onClick={openCart}
             className="w-full h-16 bg-[#D2BBFF] text-[#25005A] font-black rounded-[2rem] flex items-center justify-between px-7 shadow-[0_20px_50px_rgba(210,187,255,0.3)] active:scale-95 transition-all"
@@ -562,7 +562,7 @@ export default function MenuPage() {
                   ))}
                 </div>
 
-                <div className="p-6 bg-[#201F1F] border-t border-[#4A4455]/20 space-y-4 shrink-0">
+                <div className="px-6 pb-28 bg-[#201F1F] border-t border-[#4A4455]/20 space-y-4 shrink-0">
                   <div className="flex justify-between items-center">
                     <span className="text-[#CCC3D8] text-xs font-bold uppercase tracking-widest">
                       Subtotal
@@ -806,7 +806,7 @@ export default function MenuPage() {
                     <button
                       onClick={() => handleCheckout()}
                       disabled={processing}
-                      className="w-full py-4 bg-[#D2BBFF] text-[#25005A] font-black rounded-2xl flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_30px_rgba(210,187,255,0.2)] disabled:opacity-50"
+                      className="w-full py-4 bg-[#D2BBFF] text-[#25005A] font-black rounded-2xl flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_30px_rgba(210,187,255,0.2)] disabled:opacity-50 mb-20"
                     >
                       {processing ? (
                         <div className="w-5 h-5 border-2 border-[#25005A]/30 border-t-[#25005A] rounded-full animate-spin" />

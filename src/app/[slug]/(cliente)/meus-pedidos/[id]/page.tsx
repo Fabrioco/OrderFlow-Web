@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import {
   CaretLeft,
@@ -16,6 +16,7 @@ import {
 } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useTenant } from "@/hooks/useTenant";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -71,6 +72,8 @@ const STATUS_CONFIG: Record<
 
 export default function OrderTrackingPage() {
   const { id } = useParams();
+  const pathname = usePathname();
+  const { tenant } = useTenant(pathname?.split("/")[1] ?? "");
   const router = useRouter();
   const supabase = createClient();
   const [order, setOrder] = useState<Order | null>(null);
@@ -122,6 +125,14 @@ export default function OrderTrackingPage() {
       supabase.removeChannel(channel);
     };
   }, [id, supabase]);
+
+  function handleWhatsApp() {
+    if (!tenant?.phone) return;
+    const phone = tenant?.phone.replace(/\D/g, "");
+    const message = `Ola, gostaria de saber mais sobre o pedido #${order?.order_number}`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  }
 
   if (loading)
     return (
@@ -249,7 +260,11 @@ export default function OrderTrackingPage() {
         </section>
 
         {/* Botão de Suporte */}
-        <button className="w-full h-14 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 transition-all">
+        <button
+          type="button"
+          className="w-full h-14 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-[#25D366]/20 transition-all"
+          onClick={handleWhatsApp}
+        >
           <WhatsappLogo size={24} weight="fill" />
           PRECISA DE AJUDA? FALAR NO WHATSAPP
         </button>
