@@ -229,7 +229,6 @@ export default function Dashboard() {
       <div className="bg-noise pointer-events-none" />
       <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-250 h-150 bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
-      <Sidebar />
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10">
         <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">

@@ -426,7 +426,7 @@ export default function MenuManagement() {
       <div className="bg-noise pointer-events-none" />
       <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
-      <Sidebar />
+      
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10">
         {/* Header */}

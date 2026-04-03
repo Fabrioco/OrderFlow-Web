@@ -171,7 +171,6 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative pb-20">
       <div className="bg-noise pointer-events-none" />
-      <Sidebar />
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10 max-w-7xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
