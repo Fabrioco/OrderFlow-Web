@@ -43,6 +43,7 @@ export default function Register() {
       loading: "Criando sua conta...",
       success: (data) => {
         setLoading(false);
+        router.replace("/settings-profile")
         return `Bem-vindo, ${data.user?.user_metadata.full_name}!`;
       },
       error: (err) => {
@@ -50,7 +51,6 @@ export default function Register() {
         return `Erro: ${err.message}`;
       },
     });
-    router.replace("/settings-profile")
   }
   return (
     <main className="min-h-screen py-10 bg-bg text-text selection:bg-accent/30 font-sans relative flex items-center justify-center overflow-hidden">
