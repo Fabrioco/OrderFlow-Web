@@ -52,7 +52,7 @@ export function PwaInstallBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-50 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-50 animate-in slide-in-from-bottom duration-300">
       <div className="bg-[#1C1B1B] border border-[#D2BBFF]/20 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-4">
         {/* Ícone */}
         <div className="w-11 h-11 rounded-xl bg-[#D2BBFF]/10 flex items-center justify-center shrink-0">
