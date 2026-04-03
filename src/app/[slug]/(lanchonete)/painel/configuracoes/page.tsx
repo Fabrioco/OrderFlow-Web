@@ -349,23 +349,28 @@ export default function SettingsPage() {
                     Métodos Aceitos
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    {["cash", "pix", "card_on_delivery", "credit_card"].map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => handleTogglePaymentMethod(method)}
-                        className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
-                          formData.payment_methods.includes(method)
-                            ? "bg-accent border-accent text-white"
-                            : "bg-bg border-border text-text-muted hover:border-accent/50"
-                        }`}
-                      >
-                        {method === "cash"
-                          ? "Dinheiro"
-                          : method === "pix"
-                            ? "PIX Manual"
-                            : "Cartão na Entrega"}
-                      </button>
-                    ))}
+                    {["cash", "pix", "card_on_delivery", "credit_card"].map(
+                      (method) => (
+                        <button
+                          key={method}
+                          onClick={() => handleTogglePaymentMethod(method)}
+                          className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                            formData.payment_methods.includes(method)
+                              ? "bg-accent border-accent text-white"
+                              : "bg-bg border-border text-text-muted hover:border-accent/50"
+                          }`}
+                        >
+                          {method === "cash"
+                            ? "Dinheiro"
+                            : method === "pix"
+                              ? "PIX Manual"
+                              : method === "card_on_delivery"
+                                ? "Cartão na Entrega"
+                                : "Cartão de Crédito/Débito"
+                          }
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
