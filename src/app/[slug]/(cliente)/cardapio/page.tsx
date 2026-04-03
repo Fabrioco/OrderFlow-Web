@@ -754,10 +754,10 @@ export default function MenuPage() {
                               },
                             },
                           }}
-                          onSubmit={async ({ formData }) => {
-                            // O brick valida, tokeniza e chama onSubmit com o token pronto.
-                            // Passamos o formData para o handleCheckout que o envia ao backend.
-                            await handleCheckout(formData);
+                          onSubmit={async (param) => {
+                            // Verifique se o dado está vindo direto no parâmetro
+                            // O Brick de Card Payment geralmente retorna o objeto pronto para o backend
+                            await handleCheckout(param);
                           }}
                           onError={(error) => {
                             console.error("MP Brick error:", error);

@@ -1,12 +1,12 @@
 import { createClient } from "@/utils/supabase/client";
+import { NextRequest } from "next/server";
 
-// Gera um manifest.json dinâmico por tenant.
-// Cada lojista instala o app com o nome e cor do próprio negócio.
-export async function GET(
-  _req: Request,
-  { params }: { params: { slug: string } },
-) {
-  const { slug } = params;
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function GET(request: NextRequest, { params }: Props) {
+  const { slug } = await params; // Agora você dá await no params
 
   // Busca dados básicos do tenant para personalizar o manifest
   const supabase = createClient();

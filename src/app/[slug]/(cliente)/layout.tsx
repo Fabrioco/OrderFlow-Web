@@ -1,17 +1,17 @@
 import { BottomNav } from "@/components/[slug]/customers/BottomNav"; // ou onde você salvou
 
-export default function ClienteLayout({
-  children,
-  params,
-}: {
+type LayoutProps = {
   children: React.ReactNode;
-  params: { slug: string };
-}) {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function ClienteLayout({ children, params }: LayoutProps) {
+    const { slug } = await params;
   return (
     <>
       {children}
       {/* O Nav só existirá para as rotas de cliente */}
-      <BottomNav slug={params.slug} hasActiveOrder={false} />
+      <BottomNav slug={slug} hasActiveOrder={false} />
     </>
   );
 }

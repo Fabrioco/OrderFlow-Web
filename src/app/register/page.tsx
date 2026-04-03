@@ -10,6 +10,7 @@ import {
 import { getSupabase } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function Register() {
   const router = useRouter();
@@ -179,12 +180,12 @@ export default function Register() {
         <div className="text-center mt-8">
           <p className="text-sm text-text-secondary">
             Já tem uma conta?{" "}
-            <a
+            <Link
               href="/login"
               className="text-accent font-bold hover:text-accent-hover transition-colors"
             >
               Entrar
-            </a>
+            </Link>
           </p>
         </div>
       </section>
