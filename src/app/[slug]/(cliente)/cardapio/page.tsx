@@ -781,21 +781,6 @@ export default function MenuPage() {
                               minInstallments: 1,
                               maxInstallments: 1,
                             },
-                            fields: {
-                              payer: {
-                                email: {
-                                  required: true,
-                                },
-                                identification: {
-                                  type: {
-                                    required: true,
-                                  },
-                                  number: {
-                                    required: true,
-                                  },
-                                },
-                              },
-                            },
                             visual: {
                               style: {
                                 theme: "dark",
