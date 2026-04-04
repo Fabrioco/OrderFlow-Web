@@ -1,6 +1,5 @@
 "use client";
 
-import { Sidebar } from "@/components/Sidebar";
 import { createClient } from "@/utils/supabase/client";
 import {
   Timer,
@@ -9,6 +8,8 @@ import {
   X,
   WhatsappLogo,
   MapPin,
+  Bell,
+  BellSlash,
 } from "@phosphor-icons/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { format, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
+import { useSound } from "@/hooks/useSound";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -92,6 +94,11 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 /* ── Component ───────────────────────────────────────────────── */
 
 export default function Dashboard() {
+  const {
+    play: playSound,
+    enable: enableSound,
+    enabled: soundEnabled,
+  } = useSound();
   const { slug } = useParams<{ slug: string }>();
   const { tenant } = useTenant(slug);
   const supabase = createClient();
@@ -99,7 +106,6 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Usa diretamente o tenant.id do hook — sem estado separado que nunca era preenchido
   const tenantId = tenant?.id ?? null;
 
   /* ── Fetch ── */
@@ -124,7 +130,7 @@ export default function Dashboard() {
     }
   }, [tenantId, supabase]);
 
-  /* ── Busca inicial quando tenantId estiver disponível ── */
+  /* ── Busca inicial ── */
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -138,13 +144,13 @@ export default function Dashboard() {
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "orders",
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => {
-          console.log("Mudança detectada!", payload);
+        () => {
+          playSound(); // o hook já verifica internamente se está enabled
           fetchOrders();
         },
       )
@@ -155,7 +161,7 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, fetchOrders, supabase]);
+  }, [tenantId, fetchOrders, supabase, playSound]);
 
   /* ── Update status ── */
   const handleUpdateStatus = useCallback(
@@ -219,7 +225,7 @@ export default function Dashboard() {
   if (!tenant) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-accent"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-accent" />
       </div>
     );
   }
@@ -227,8 +233,7 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
       <div className="bg-noise pointer-events-none" />
-      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-250 h-150 bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
-
+      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
       <section className="lg:ml-64 p-8 md:p-12 relative z-10">
         <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -241,11 +246,37 @@ export default function Dashboard() {
               {tenant?.name} • Pedidos de Hoje
             </h1>
           </div>
-          <StatSmall
-            icon={<Timer size={20} weight="duotone" className="text-accent" />}
-            label="Média de Preparo"
-            value="12 MIN"
-          />
+
+          <div className="flex items-center gap-3">
+            <StatSmall
+              icon={
+                <Timer size={20} weight="duotone" className="text-accent" />
+              }
+              label="Média de Preparo"
+              value="12 MIN"
+            />
+
+            {/* Botão de ativar som — precisa ser clicado uma vez pelo dono */}
+            <button
+              onClick={enableSound}
+              disabled={soundEnabled}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all ${
+                soundEnabled
+                  ? "border-accent/30 bg-accent/10 text-accent cursor-default"
+                  : "border-border bg-surface text-text-muted hover:border-accent/50 hover:text-accent active:scale-95"
+              }`}
+            >
+              {soundEnabled ? (
+                <>
+                  <Bell size={16} weight="fill" /> Som ativo
+                </>
+              ) : (
+                <>
+                  <BellSlash size={16} weight="duotone" /> Ativar som
+                </>
+              )}
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
@@ -330,7 +361,6 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Banner de instalação do PWA */}
       <PwaInstallBanner />
     </main>
   );
@@ -357,9 +387,11 @@ function OrderCard({
   return (
     <>
       <div
-        className={`p-6 rounded-3xl border border-border bg-surface shadow-xl hover:border-accent/30 transition-all relative overflow-hidden group ${compact ? "opacity-60 hover:opacity-100" : ""}`}
+        className={`p-6 rounded-3xl border border-border bg-surface shadow-xl hover:border-accent/30 transition-all relative overflow-hidden group ${
+          compact ? "opacity-60 hover:opacity-100" : ""
+        }`}
       >
-        <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-accent/40 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
         <div className="flex justify-between items-start mb-5">
           <div>
@@ -367,14 +399,14 @@ function OrderCard({
               #{String(order.order_number).padStart(4, "0")} ·{" "}
               {format(new Date(order.created_at), "HH:mm")}
             </span>
-            <h3 className="text-lg font-bold text-text mt-0.5 truncate max-w-45">
+            <h3 className="text-lg font-bold text-text mt-0.5 truncate max-w-[180px]">
               {order.customers?.name ?? "Cliente"}
             </h3>
           </div>
           <StatusBadge status={order.status} />
         </div>
 
-        <div className="space-y-1.5 mb-5 min-h-12">
+        <div className="space-y-1.5 mb-5 min-h-[48px]">
           {order.order_items?.slice(0, 2).map((item) => (
             <div
               key={item.id}
@@ -430,9 +462,8 @@ function OrderCard({
               </button>
             ) : (
               <button
-                onClick={() => setShowDetails(true)}
-                className="py-2.5 rounded-xl font-bold text-xs bg-surface-alt border border-border text-text-muted"
                 disabled
+                className="py-2.5 rounded-xl font-bold text-xs bg-surface-alt border border-border text-text-muted"
               >
                 {STATUS_LABEL[order.status]}
               </button>
@@ -460,7 +491,7 @@ function OrderCard({
       </div>
 
       {showDetails && (
-        <div className="fixed inset-0 z-100 flex justify-end">
+        <div className="fixed inset-0 z-[100] flex justify-end">
           <div
             className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
             onClick={() => setShowDetails(false)}
