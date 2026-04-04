@@ -1,4 +1,4 @@
-import { BottomNav } from "@/components/[slug]/customers/BottomNav"; // ou onde você salvou
+import { BottomNav } from "@/components/[slug]/(clientes)/BottomNav"; // ou onde você salvou
 
 type LayoutProps = {
   children: React.ReactNode;

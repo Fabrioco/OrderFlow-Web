@@ -17,11 +17,14 @@ export type TenantPlan = "free" | "pro";
 
 export type UserRole = "owner" | "staff";
 
+export type Step = "cart" | "info";
+
 /* ── Tenant ───────────────────────────────────────────────── */
 export interface Tenant {
   id: string;
   slug: string;
   name: string;
+  description: string | null;
   logo_url: string | null;
   phone: string | null;
   address: string | null;
@@ -42,9 +45,18 @@ export interface Tenant {
 // Versão pública (sem dados sensíveis) — via view tenants_public
 export type TenantPublic = Pick<
   Tenant,
-  | "id" | "slug" | "name" | "logo_url" | "phone"
-  | "address" | "city" | "is_open" | "plan"
-  | "payment_methods" | "pix_key_type" | "created_at"
+  | "id"
+  | "slug"
+  | "name"
+  | "logo_url"
+  | "phone"
+  | "address"
+  | "city"
+  | "is_open"
+  | "plan"
+  | "payment_methods"
+  | "pix_key_type"
+  | "created_at"
 >;
 
 /* ── Tenant User ──────────────────────────────────────────── */
@@ -165,4 +177,9 @@ export interface Payment {
   raw_response: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CartItem extends Product {
+  quantity: number;
+  selected_addons: Addon[];
 }
