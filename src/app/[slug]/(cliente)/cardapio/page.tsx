@@ -37,8 +37,17 @@ interface Product {
   categories: Category;
 }
 
+/* No bloco de Types */
+interface Addon {
+  id: string;
+  name: string;
+  price: number;
+  is_available: boolean;
+}
+
 interface CartItem extends Product {
   quantity: number;
+  selected_addons: Addon[]; // Adicionado para rastrear extras
 }
 
 interface Tenant {
@@ -115,6 +124,7 @@ export default function MenuPage() {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [zones, setZones] = useState<DeliveryZone[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
   const [loading, setLoading] = useState(true);
   const [mpReady, setMpReady] = useState(false);
 
@@ -124,6 +134,11 @@ export default function MenuPage() {
   const [step, setStep] = useState<Step>("cart");
   const [form, setForm] = useState<CustomerForm>(BLANK_FORM);
   const [processing, setProcessing] = useState(false);
+
+  const [customizingProduct, setCustomizingProduct] = useState<Product | null>(
+    null,
+  );
+  const [selectedAddons, setSelectedAddons] = useState<Addon[]>([]);
 
   /* ── Fetch ── */
   useEffect(() => {
@@ -147,24 +162,34 @@ export default function MenuPage() {
           setMpReady(true);
         }
 
-        const [{ data: prods }, { data: dz }] = await Promise.all([
-          supabase
-            .from("products")
-            .select(
-              "id, name, description, price, image_url, categories(name, emoji)",
-            )
-            .eq("tenant_id", tenantData.id)
-            .eq("is_available", true)
-            .order("sort_order"),
-          supabase
-            .from("delivery_zones")
-            .select("id, neighborhood, fee")
-            .eq("tenant_id", tenantData.id)
-            .order("neighborhood"),
-        ]);
+        const [{ data: prods }, { data: dz }, { data: ads }] =
+          await Promise.all([
+            supabase
+              .from("products")
+              .select(
+                "id, name, description, price, image_url, categories(name, emoji)",
+              )
+              .eq("tenant_id", tenantData.id)
+              .eq("is_available", true)
+              .order("sort_order"),
+
+            supabase
+              .from("delivery_zones")
+              .select("id, neighborhood, fee")
+              .eq("tenant_id", tenantData.id)
+              .order("neighborhood"),
+
+            supabase
+              .from("addons")
+              .select("id, name, price, is_available")
+              .eq("tenant_id", tenantData.id)
+              .eq("is_available", true)
+              .order("name"),
+          ]);
 
         setProducts((prods as unknown as Product[]) ?? []);
         setZones((dz as DeliveryZone[]) ?? []);
+        setAddons((ads as Addon[]) ?? []);
       } catch (err: any) {
         toast.error(err.message);
       } finally {
@@ -175,18 +200,84 @@ export default function MenuPage() {
   }, [slug]);
 
   /* ── Cart helpers ── */
-  function addToCart(product: Product) {
+  // 1. Função que de fato salva na sacola
+  function confirmAddToCart() {
+    if (!customizingProduct) return;
+
     setCart((prev) => {
-      const exists = prev.find((i) => i.id === product.id);
-      if (exists)
+      // Criamos uma chave única baseada no ID + Adicionais para não agrupar itens com extras diferentes
+      const addonIds = selectedAddons
+        .map((a) => a.id)
+        .sort()
+        .join(",");
+      const exists = prev.find(
+        (i) =>
+          i.id === customizingProduct.id &&
+          i.selected_addons
+            .map((a) => a.id)
+            .sort()
+            .join(",") === addonIds,
+      );
+
+      if (exists) {
         return prev.map((i) =>
-          i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i,
+          i === exists ? { ...i, quantity: i.quantity + 1 } : i,
         );
-      return [...prev, { ...product, quantity: 1 }];
+      }
+
+      return [
+        ...prev,
+        { ...customizingProduct, quantity: 1, selected_addons: selectedAddons },
+      ];
+    });
+
+    toast.success(`${customizingProduct.name} adicionado!`);
+    setCustomizingProduct(null);
+    setSelectedAddons([]);
+  }
+
+  // Adicione esta função ou ajuste a handleProductClick
+  function addToCartDirect(product: Product) {
+    setCart((prev) => {
+      const exists = prev.find(
+        (i) => i.id === product.id && i.selected_addons.length === 0,
+      );
+      if (exists) {
+        return prev.map((i) =>
+          i === exists ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      }
+      return [...prev, { ...product, quantity: 1, selected_addons: [] }];
     });
     toast.success(`${product.name} adicionado!`);
   }
 
+  function handleProductClick(product: Product) {
+    if (addons.length > 0) {
+      setCustomizingProduct(product);
+      setSelectedAddons([]);
+    } else {
+      addToCartDirect(product); // Agora a função existe
+    }
+  }
+
+  function addToCart(product: Product) {
+    setCart((prev) => {
+      const exists = prev.find(
+        (i) => i.id === product.id && i.selected_addons.length === 0,
+      );
+
+      if (exists) {
+        return prev.map((i) =>
+          i === exists ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      }
+
+      return [...prev, { ...product, quantity: 1, selected_addons: [] }];
+    });
+
+    toast.success(`${product.name} adicionado!`);
+  }
   function removeFromCart(id: string) {
     setCart((prev) =>
       prev
@@ -200,10 +291,11 @@ export default function MenuPage() {
     setIsCartOpen(true);
   }
 
-  const cartTotal = cart.reduce(
-    (acc, i) => acc + Number(i.price) * i.quantity,
-    0,
-  );
+  const cartTotal = cart.reduce((acc, item) => {
+    const addonsPrice =
+      item.selected_addons?.reduce((sum, a) => sum + Number(a.price), 0) ?? 0;
+    return acc + (Number(item.price) + addonsPrice) * item.quantity;
+  }, 0);
   const selectedZone = zones.find((z) => z.neighborhood === form.neighborhood);
   const deliveryFee = selectedZone?.fee ?? 0;
   const totalFinal = cartTotal + deliveryFee;
@@ -264,17 +356,12 @@ export default function MenuPage() {
     setProcessing(true);
 
     // ✅ DEBUG REAL
-    console.log("📦 mpFormData recebido:");
-    console.log(JSON.stringify(mpFormData, null, 2));
 
     try {
       // 🔥 GARANTE SERIALIZAÇÃO LIMPA
       const cleanFormData = mpFormData
         ? JSON.parse(JSON.stringify(mpFormData))
         : null;
-
-      console.log("🧼 cleanFormData:");
-      console.log(JSON.stringify(cleanFormData, null, 2));
 
       // ❌ BLOQUEIA se estiver vazio (cartão exige isso)
       if (isCardPayment && !cleanFormData?.payer?.email) {
@@ -307,6 +394,7 @@ export default function MenuPage() {
             title: i.name,
             unit_price: i.price,
             quantity: i.quantity,
+            selected_addons: i.selected_addons, // Envia o array de adicionais para salvar em order_items
           })),
           use_mp: isCardPayment,
           mp_form_data: cleanFormData,
@@ -314,8 +402,6 @@ export default function MenuPage() {
       });
 
       const json = await res.json();
-
-      console.log("📡 RESPONSE BACKEND:", json);
 
       if (!res.ok || json.error) {
         const message = getErrorMessage(json.error?.detail);
@@ -325,7 +411,6 @@ export default function MenuPage() {
       toast.success("Pedido realizado com sucesso!");
       router.push(`/${slug}/meus-pedidos/${json.orderId}`);
     } catch (err: any) {
-      console.error("❌ CHECKOUT ERROR:", err);
       toast.error(err.message);
     } finally {
       setProcessing(false);
@@ -433,7 +518,8 @@ export default function MenuPage() {
             <button
               key={product.id}
               onClick={() => {
-                if (tenant.is_open) addToCart(product);
+                if (!tenant.is_open) return;
+                handleProductClick(product);
               }}
               disabled={!tenant.is_open}
               className="group text-left bg-[#1C1B1B] border border-[#4A4455]/20 rounded-[2rem] p-5 flex gap-5 hover:border-[#D2BBFF]/40 transition-all relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed"
@@ -799,8 +885,6 @@ export default function MenuPage() {
                             },
                           }}
                           onSubmit={async (param) => {
-                            console.log("🔥 PARAM RAW:", param);
-
                             // 🔥 NORMALIZAÇÃO (ESSENCIAL)
                             const payload = {
                               token: param.token,
@@ -817,12 +901,9 @@ export default function MenuPage() {
                               },
                             };
 
-                            console.log("🧼 PAYLOAD FINAL:", payload);
-
                             await handleCheckout(payload);
                           }}
                           onError={(error) => {
-                            console.error("MP Brick error:", error);
                             toast.error(
                               "Erro ao processar cartão. Tente novamente.",
                             );
@@ -883,6 +964,97 @@ export default function MenuPage() {
                 )}
               </>
             )}
+          </div>
+        </div>
+      )}
+      {customizingProduct && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setCustomizingProduct(null)}
+          />
+          <div className="relative w-full max-w-lg bg-[#1C1B1B] border border-[#4A4455]/30 rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header Modal */}
+            <div className="p-6 border-b border-[#4A4455]/20">
+              <h3 className="text-xl font-black text-white uppercase italic">
+                {customizingProduct.name}
+              </h3>
+              <p className="text-xs text-[#CCC3D8] mt-1">
+                Turbine seu pedido com adicionais:
+              </p>
+            </div>
+
+            {/* Lista de Adicionais */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+              {addons.map((addon) => {
+                const isSelected = selectedAddons.some(
+                  (a) => a.id === addon.id,
+                );
+                return (
+                  <button
+                    key={addon.id}
+                    onClick={() => {
+                      setSelectedAddons((prev) =>
+                        isSelected
+                          ? prev.filter((a) => a.id !== addon.id)
+                          : [...prev, addon],
+                      );
+                    }}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
+                      isSelected
+                        ? "border-[#D2BBFF] bg-[#D2BBFF]/5"
+                        : "border-[#4A4455]/20 bg-[#131313]/50"
+                    }`}
+                  >
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-white text-sm">
+                        {addon.name}
+                      </span>
+                      <span className="text-[#D2BBFF] text-xs font-black">
+                        +{" "}
+                        {Number(addon.price).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                      </span>
+                    </div>
+                    <div
+                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                        isSelected
+                          ? "bg-[#D2BBFF] border-[#D2BBFF]"
+                          : "border-[#4A4455]"
+                      }`}
+                    >
+                      {isSelected && (
+                        <CheckCircle
+                          size={16}
+                          weight="fill"
+                          className="text-[#25005A]"
+                        />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="p-6 bg-[#201F1F] border-t border-[#4A4455]/20">
+              <button
+                onClick={confirmAddToCart}
+                className="w-full py-4 bg-[#D2BBFF] text-[#25005A] font-black rounded-2xl flex items-center justify-center gap-3"
+              >
+                Adicionar à sacola
+                <span className="opacity-50 text-xs">•</span>
+                {(
+                  Number(customizingProduct.price) +
+                  selectedAddons.reduce((acc, a) => acc + Number(a.price), 0)
+                ).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </button>
+            </div>
           </div>
         </div>
       )}
