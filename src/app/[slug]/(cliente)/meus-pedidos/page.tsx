@@ -51,6 +51,14 @@ export default function MyOrdersPage() {
     );
   }
 
+  if(!slug) {
+    return (
+      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#D2BBFF]" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#131313] text-[#e5e2e1] font-sans pb-20">
       <div className="fixed inset-0 opacity-[0.01] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
