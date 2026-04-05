@@ -123,6 +123,19 @@ export default function MenuPage() {
     if (slug) fetchData();
   }, [slug, supabase]);
 
+  useEffect(() => {
+    if (customizingProduct) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // cleanup (importante)
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [customizingProduct]);
+
   /* ── Handlers de Produto ── */
   function handleProductClick(product: Product) {
     if (addons.length > 0) {
