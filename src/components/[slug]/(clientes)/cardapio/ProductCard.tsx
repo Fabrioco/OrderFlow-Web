@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Product, Tenant } from "@/types/supabase";
 import { PlusIcon } from "@phosphor-icons/react";
 
@@ -10,6 +11,8 @@ export function ProductCard({
   tenant: Tenant;
   handleProductClick: (product: Product) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <button
       key={product.id}
@@ -31,15 +34,34 @@ export function ProductCard({
           product.categories?.emoji
         )}
       </div>
+
       <div className="flex flex-col justify-between py-1 flex-1 min-w-0">
         <div>
           <h3 className="font-black text-white text-base uppercase tracking-tight italic group-hover:text-[#D2BBFF] transition-colors truncate">
             {product.name}
           </h3>
-          <p className="text-xs text-[#CCC3D8] line-clamp-2 mt-1 leading-relaxed">
+
+          <p
+            className={`text-xs text-[#CCC3D8] mt-1 leading-relaxed ${
+              expanded ? "" : "line-clamp-2"
+            }`}
+          >
             {product.description}
           </p>
+
+          {product.description && product.description.length > 80 && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation(); // evita clicar no card
+                setExpanded((prev) => !prev);
+              }}
+              className="text-xs text-[#D2BBFF] cursor-pointer mt-1 inline-block"
+            >
+              {expanded ? "ver menos" : "ver mais"}
+            </span>
+          )}
         </div>
+
         <div className="flex items-center justify-between mt-4">
           <span className="font-black text-[#D2BBFF] text-lg">
             {Number(product.price).toLocaleString("pt-BR", {
@@ -47,6 +69,7 @@ export function ProductCard({
               currency: "BRL",
             })}
           </span>
+
           <div className="w-9 h-9 rounded-full bg-[#D2BBFF]/10 text-[#D2BBFF] flex items-center justify-center group-hover:bg-[#D2BBFF] group-hover:text-[#25005A] transition-all">
             <PlusIcon size={18} weight="bold" />
           </div>
