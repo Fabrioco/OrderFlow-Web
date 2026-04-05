@@ -5,16 +5,20 @@ import {
   Gear,
   Question,
   SignOut,
+  UserSwitchIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client"; // Ajustei para o padrão do projeto
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+
+  const [role, setRole] = useState<string | null>(null);
 
   // Extrai o slug da URL
   const segments = pathname.split("/");
@@ -36,8 +40,41 @@ export function Sidebar() {
       label: "Ajustes", // Encurtado para caber melhor no mobile
       path: `/${slug}/painel/configuracoes`,
     },
+    ...(role === "admin"
+      ? [
+          {
+            icon: UserSwitchIcon, // pode trocar depois
+            label: "Admin",
+            path: `/admin`,
+          },
+        ]
+      : []),
   ];
 
+  useEffect(() => {
+    async function loadUserRole() {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+
+        if (!userId) return;
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) throw error;
+
+        setRole(data.role);
+      } catch (err) {
+        console.error("Erro ao buscar role:", err);
+      }
+    }
+
+    loadUserRole();
+  }, [supabase]);
   async function handleLogout() {
     toast.promise(
       async () => {
