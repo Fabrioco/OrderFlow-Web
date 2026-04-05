@@ -18,12 +18,12 @@ export default function CustomizeModal({
   confirmAddToCart: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
+    <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full bottom-20 z-70 flex items-center justify-center p-4 h-screen">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setCustomizingProduct(null)}
       />
-      <div className="relative w-full max-w-lg bg-[#1C1B1B] border border-[#4A4455]/30 rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-[#1C1B1B] border border-[#4A4455]/30 rounded-[2.5rem] overflow-hidden flex flex-col max-h-[70vh]">
         {/* Header Modal */}
         <div className="p-6 border-b border-[#4A4455]/20">
           <h3 className="text-xl font-black text-white uppercase italic">
