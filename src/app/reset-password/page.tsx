@@ -4,66 +4,54 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  EnvelopeSimpleIcon,
   LockSimpleIcon,
   ArrowRightIcon,
   CaretLeftIcon,
   CircleNotchIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 
-export default function Login() {
+export default function ResetPassword() {
   const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+  async function handleReset(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const confirm = formData.get("confirm") as string;
+
+    if (password !== confirm) {
+      toast.error("As senhas não coincidem.");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("A senha deve ter pelo menos 8 caracteres.");
+      setLoading(false);
+      return;
+    }
 
     const promise = async () => {
-      // 1. Autenticação básica
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-      if (authError) throw new Error(authError.message);
-      if (!authData.user) throw new Error("Usuário não encontrado.");
-
-      const { data: tenantData, error } = await supabase
-        .from("tenant_users")
-        .select("tenant_id")
-        .eq("user_id", authData.user.id)
-        .single();
-
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) throw new Error(error.message);
-
-      const { data: tenantPublicData, error: tenantPublicError } =
-        await supabase
-          .from("tenants")
-          .select("*")
-          .eq("id", tenantData?.tenant_id)
-          .single();
-
-      if (tenantPublicError) throw new Error(tenantPublicError.message);
-
-      return { tenantPublicData, authData };
     };
 
     toast.promise(promise(), {
-      loading: "Autenticando e localizando sua loja...",
-      success: (data) => {
+      loading: "Redefinindo sua senha...",
+      success: () => {
         setLoading(false);
-        // Redirecionamento dinâmico usando o slug recuperado
-        router.push(`/${data.tenantPublicData.slug}/painel/pedidos`);
-        return `Bem-vindo de volta! ${data.authData.user.user_metadata.full_name}`;
+        router.push("/login");
+        return "Senha redefinida com sucesso!";
       },
       error: (err) => {
         setLoading(false);
@@ -74,14 +62,13 @@ export default function Login() {
 
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative flex items-center justify-center p-6">
-      {/* BACKGROUND DECORATION (Igual a Home e Register) */}
       <div className="bg-noise pointer-events-none" />
-      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-accent/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-200 h-125 bg-accent/10 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10">
         {/* BACK BUTTON */}
         <Link
-          href="/"
+          href="/login"
           className="inline-flex items-center gap-2 text-text-muted hover:text-accent transition-colors mb-8 group"
         >
           <CaretLeftIcon
@@ -90,57 +77,28 @@ export default function Login() {
             className="group-hover:-translate-x-1 transition-transform"
           />
           <span className="text-[10px] font-black uppercase tracking-widest">
-            Voltar para Home
+            Voltar para Login
           </span>
         </Link>
 
-        {/* LOGIN CARD */}
         <div className="p-8 md:p-10 rounded-3xl border border-border bg-surface shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-accent/40 to-transparent" />
 
           <div className="mb-10 text-center">
             <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Bem-vindo de volta
+              Nova senha
             </h1>
-            <p className="text-text-secondary text-sm">
-              Acesse sua conta para gerenciar seus pedidos.
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Escolha uma senha forte com pelo menos 8 caracteres.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            {/* EMAIL */}
+          <form onSubmit={handleReset} className="space-y-5">
+            {/* NOVA SENHA */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">
-                E-mail Profissional
+                Nova Senha
               </label>
-              <div className="relative group">
-                <EnvelopeSimpleIcon
-                  size={20}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors"
-                />
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="exemplo@orderflow.com"
-                  className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-4 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* PASSWORD */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
-                  Senha
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-[10px] font-bold text-accent hover:underline"
-                >
-                  Esqueceu a senha?
-                </Link>
-              </div>
               <div className="relative group">
                 <LockSimpleIcon
                   size={20}
@@ -148,15 +106,58 @@ export default function Login() {
                 />
                 <input
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  minLength={8}
                   placeholder="••••••••"
-                  className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-4 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
+                  className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-12 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-accent transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon size={18} />
+                  ) : (
+                    <EyeIcon size={18} />
+                  )}
+                </button>
               </div>
             </div>
 
-            {/* SUBMIT BUTTON */}
+            {/* CONFIRMAR SENHA */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">
+                Confirmar Senha
+              </label>
+              <div className="relative group">
+                <LockSimpleIcon
+                  size={20}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent transition-colors"
+                />
+                <input
+                  name="confirm"
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  minLength={8}
+                  placeholder="••••••••"
+                  className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-12 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-accent transition-colors"
+                >
+                  {showConfirm ? (
+                    <EyeSlashIcon size={18} />
+                  ) : (
+                    <EyeIcon size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+
             <button
               disabled={loading}
               type="submit"
@@ -170,28 +171,14 @@ export default function Login() {
                 />
               ) : (
                 <>
-                  Entrar no Painel
+                  Redefinir senha
                   <ArrowRightIcon size={20} weight="bold" />
                 </>
               )}
             </button>
           </form>
-
-          {/* REGISTER LINK */}
-          <div className="mt-8 pt-8 border-t border-border text-center">
-            <p className="text-sm text-text-secondary">
-              Ainda não tem uma lanchonete?{" "}
-              <Link
-                href="/register"
-                className="text-accent font-bold hover:underline"
-              >
-                Criar agora
-              </Link>
-            </p>
-          </div>
         </div>
 
-        {/* FOOTER TEXT */}
         <p className="text-center mt-8 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
           © 2026 OrderFlow Architect • Infraestrutura Segura
         </p>
