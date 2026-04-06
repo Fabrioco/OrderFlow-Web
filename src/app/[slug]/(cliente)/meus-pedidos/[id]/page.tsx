@@ -43,6 +43,7 @@ interface Order {
     product_name: string;
     quantity: number;
     unit_price: number;
+    selected_addons?: { name: string; price: number }[];
   }[];
 }
 
@@ -79,19 +80,13 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Busca inicial e Inscrição Realtime
   useEffect(() => {
     if (!id) return;
 
     const fetchOrder = async () => {
       const { data } = await supabase
         .from("orders")
-        .select(
-          `
-          *,
-          order_items (*)
-        `,
-        )
+        .select(`*, order_items (*)`)
         .eq("id", id)
         .single();
 
@@ -101,7 +96,6 @@ export default function OrderTrackingPage() {
 
     fetchOrder();
 
-    // Inscrição para mudanças em tempo real apenas deste pedido
     const channel = supabase
       .channel(`order-changes-${id}`)
       .on(
@@ -113,7 +107,6 @@ export default function OrderTrackingPage() {
           filter: `id=eq.${id}`,
         },
         (payload) => {
-          // Atualiza o estado local com os novos dados do banco
           setOrder((prev) =>
             prev ? { ...prev, ...payload.new } : (payload.new as Order),
           );
@@ -129,7 +122,7 @@ export default function OrderTrackingPage() {
   function handleWhatsApp() {
     if (!tenant?.phone) return;
     const phone = tenant?.phone.replace(/\D/g, "");
-    const message = `Ola, gostaria de saber mais sobre o pedido #${order?.order_number}`;
+    const message = `Olá, gostaria de saber mais sobre o pedido #${order?.order_number}`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   }
@@ -140,6 +133,7 @@ export default function OrderTrackingPage() {
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary" />
       </div>
     );
+
   if (!order)
     return (
       <div className="min-h-screen bg-[#131313] text-white p-10">
@@ -207,21 +201,39 @@ export default function OrderTrackingPage() {
               Resumo do Pedido
             </h3>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-6">
             {order.order_items.map((item) => (
-              <div key={item.id} className="flex justify-between items-center">
-                <div className="flex gap-3 items-center">
-                  <span className="text-xs font-black text-primary bg-primary/10 size-6 flex items-center justify-center rounded-lg">
-                    {item.quantity}x
+              <div key={item.id} className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-3 items-center">
+                    <span className="text-xs font-black text-primary bg-primary/10 size-6 flex items-center justify-center rounded-lg">
+                      {item.quantity}x
+                    </span>
+                    <span className="text-sm font-bold">
+                      {item.product_name}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-[#ccc3d8]">
+                    {(item.quantity * item.unit_price).toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
                   </span>
-                  <span className="text-sm font-bold">{item.product_name}</span>
                 </div>
-                <span className="text-sm font-bold text-[#ccc3d8]">
-                  {(item.quantity * item.unit_price).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}
-                </span>
+
+                {/* Adicionais renderizados abaixo do nome do produto */}
+                {item.selected_addons && item.selected_addons.length > 0 && (
+                  <div className="pl-9 flex flex-wrap gap-1">
+                    {item.selected_addons.map((addon, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] font-bold text-primary/60 bg-primary/5 px-2 py-0.5 rounded border border-primary/10"
+                      >
+                        + {addon.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -229,7 +241,7 @@ export default function OrderTrackingPage() {
               <div className="flex justify-between text-xs text-[#ccc3d8] font-bold uppercase tracking-widest">
                 <span>Subtotal</span>
                 <span>
-                  {order.subtotal.toLocaleString("pt-BR", {
+                  {Number(order.subtotal).toLocaleString("pt-BR", {
                     style: "currency",
                     currency: "BRL",
                   })}
@@ -238,7 +250,7 @@ export default function OrderTrackingPage() {
               <div className="flex justify-between text-xs text-[#ccc3d8] font-bold uppercase tracking-widest">
                 <span>Taxa de Entrega</span>
                 <span>
-                  {order.delivery_fee.toLocaleString("pt-BR", {
+                  {Number(order.delivery_fee).toLocaleString("pt-BR", {
                     style: "currency",
                     currency: "BRL",
                   })}
@@ -249,7 +261,7 @@ export default function OrderTrackingPage() {
                   Total
                 </span>
                 <span className="text-xl font-black text-primary tracking-tighter">
-                  {order.total.toLocaleString("pt-BR", {
+                  {Number(order.total).toLocaleString("pt-BR", {
                     style: "currency",
                     currency: "BRL",
                   })}
