@@ -220,7 +220,22 @@ export default function Dashboard() {
 
   const totalDay = orders
     .filter((o) => o.status !== "cancelled")
-    .reduce((acc, o) => acc + Number(o.total), 0);
+    .reduce((acc, order) => {
+      const itemsTotal = order.order_items.reduce((sum, item) => {
+        const addonsTotal =
+          item.selected_addons?.reduce(
+            (sum, addon) => sum + Number(addon.price),
+            0,
+          ) ?? 0;
+
+        const itemTotal =
+          (Number(item.unit_price) + addonsTotal) * Number(item.quantity);
+
+        return sum + itemTotal;
+      }, 0);
+
+      return acc + itemsTotal + Number(order.delivery_fee);
+    }, 0);
 
   if (!tenant) {
     return (
@@ -387,68 +402,116 @@ function OrderCard({
   return (
     <>
       <div
-        className={`p-6 rounded-3xl border border-border bg-surface shadow-xl hover:border-accent/30 transition-all relative overflow-hidden group ${
-          compact ? "opacity-60 hover:opacity-100" : ""
+        className={`group relative overflow-hidden rounded-[32px] border border-white/10 bg-surface/50 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/40 hover:shadow-2xl hover:shadow-accent/5 ${
+          compact
+            ? "opacity-75 hover:opacity-100 scale-[0.98] hover:scale-100"
+            : ""
         }`}
       >
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+        {/* Efeito de gradiente no topo */}
+        <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent/10 blur-[60px] transition-opacity group-hover:opacity-100" />
 
-        <div className="flex justify-between items-start mb-5">
-          <div>
-            <span className="text-[10px] font-black text-accent uppercase tracking-widest">
-              #{String(order.order_number).padStart(4, "0")} ·{" "}
-              {format(new Date(order.created_at), "HH:mm")}
-            </span>
-            <h3 className="text-lg font-bold text-text mt-0.5 truncate max-w-[180px]">
+        {/* Header: ID, Horário e Status */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-bold text-accent uppercase tracking-tighter border border-accent/20">
+                #{String(order.order_number).padStart(4, "0")}
+              </span>
+              <span className="text-[10px] font-medium text-text-muted">
+                {format(new Date(order.created_at), "HH:mm")}
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-text tracking-tight truncate max-w-[160px]">
               {order.customers?.name ?? "Cliente"}
             </h3>
           </div>
           <StatusBadge status={order.status} />
         </div>
 
-        <div className="space-y-1.5 mb-5 min-h-[48px]">
-          {order.order_items?.slice(0, 2).map((item) => (
-            <div
-              key={item.id}
-              className="flex justify-between text-sm text-text-secondary"
-            >
-              <span>
-                {item.quantity}× {item.product_name}
-              </span>
-              <span className="text-text-muted text-xs">
-                R${" "}
-                {(item.unit_price * item.quantity).toFixed(2).replace(".", ",")}
-              </span>
-            </div>
-          ))}
-          {(order.order_items?.length ?? 0) > 2 && (
-            <p className="text-[10px] text-accent font-bold uppercase">
-              + {order.order_items.length - 2}{" "}
-              {order.order_items.length - 2 === 1 ? "item" : "itens"}
+        {/* Itens do Pedido */}
+        <div className="space-y-2 mb-5">
+          {order.order_items?.slice(0, 2).map((item) => {
+            const addonsTotal =
+              item.selected_addons?.reduce(
+                (sum, a) => sum + Number(a.price),
+                0,
+              ) ?? 0;
+            const itemTotal =
+              (Number(item.unit_price) + addonsTotal) * Number(item.quantity);
+
+            return (
+              <div
+                key={item.id}
+                className="group/item relative pl-3 border-l-2 border-white/5 hover:border-accent/30 transition-colors"
+              >
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-text-secondary font-medium">
+                    <b className="text-text mr-1">{item.quantity}x</b>{" "}
+                    {item.product_name}
+                  </span>
+                  <span className="text-[11px] font-mono text-text-muted">
+                    R$ {itemTotal.toFixed(2).replace(".", ",")}
+                  </span>
+                </div>
+                {item.selected_addons && item.selected_addons.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {item.selected_addons.map((addon) => (
+                      <span
+                        key={addon.name}
+                        className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-text-muted border border-white/5"
+                      >
+                        +{addon.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {order.order_items?.length > 2 && (
+            <p className="text-[10px] text-accent font-bold pl-3 mt-1 tracking-widest uppercase">
+              + {order.order_items.length - 2} itens...
             </p>
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-border mb-4">
-          <span className="text-xs text-text-muted font-medium">
-            {order.payment_method === "pix"
-              ? "PIX"
-              : order.payment_method === "cash"
-                ? "Dinheiro"
-                : order.payment_method === "credit_card"
-                  ? "Crédito"
-                  : "Débito"}
-          </span>
-          <span className="text-base font-bold text-text">
-            R$ {Number(order.total).toFixed(2).replace(".", ",")}
-          </span>
+        {/* Endereço Sutil */}
+        {order.delivery_address && !compact && (
+          <div className="flex items-center gap-2 mb-5 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+            <MapPin size={14} className="text-accent shrink-0" />
+            <span className="text-xs text-text-secondary truncate">
+              {order.delivery_address.street}, {order.delivery_address.number}
+            </span>
+          </div>
+        )}
+
+        {/* Footer: Pagamento e Total */}
+        <div className="flex items-center justify-between py-4 border-t border-white/5">
+          <div className="flex flex-col">
+            <span className="text-[9px] uppercase font-black tracking-widest text-text-muted">
+              Pagamento
+            </span>
+            <span className="text-xs font-bold text-text-secondary">
+              {order.payment_method === "pix" ? "PIX" : "Cartão/Dinheiro"}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-[9px] uppercase font-black tracking-widest text-text-muted block">
+              Total
+            </span>
+            <span className="text-xl font-black text-text tracking-tighter">
+              R$ {Number(order.total).toFixed(2).replace(".", ",")}
+            </span>
+          </div>
         </div>
 
-        {!compact && (
-          <div className="grid grid-cols-2 gap-2">
+        {/* Ações */}
+        {!compact ? (
+          <div className="grid grid-cols-2 gap-3 mt-2">
             <button
               onClick={() => setShowDetails(true)}
-              className="py-2.5 rounded-xl font-bold bg-surface-alt border border-border text-text text-xs hover:bg-border transition-all"
+              className="flex items-center justify-center py-3 rounded-2xl font-bold bg-white/5 border border-white/10 text-text text-xs hover:bg-white/10 transition-all active:scale-95"
             >
               Detalhes
             </button>
@@ -456,40 +519,37 @@ function OrderCard({
             {hasNext ? (
               <button
                 onClick={() => onUpdateStatus(order.id, order.status)}
-                className="py-2.5 rounded-xl font-bold text-xs transition-all bg-accent text-white shadow-lg shadow-accent/20 hover:brightness-110 active:scale-95"
+                className="relative py-3 rounded-2xl font-bold text-xs bg-accent text-white shadow-lg shadow-accent/20 hover:brightness-110 active:scale-95 overflow-hidden group/btn"
               >
-                {STATUS_ACTION[order.status]}
+                <span className="relative z-10">
+                  {STATUS_ACTION[order.status]}
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
               </button>
             ) : (
-              <button
-                disabled
-                className="py-2.5 rounded-xl font-bold text-xs bg-surface-alt border border-border text-text-muted"
-              >
+              <div className="py-3 rounded-2xl font-bold text-[10px] text-center bg-white/5 text-text-muted border border-white/5 uppercase tracking-widest">
                 {STATUS_LABEL[order.status]}
-              </button>
+              </div>
             )}
           </div>
-        )}
-
-        {!isDone && !compact && order.status === "pending" && (
+        ) : (
           <button
-            onClick={() => onCancel(order.id)}
-            className="w-full mt-2 py-2 text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-red-400 transition-colors"
+            onClick={() => setShowDetails(true)}
+            className="w-full py-2 text-[10px] text-center font-black uppercase tracking-widest text-text-muted hover:text-accent transition-colors"
           >
-            Recusar pedido
+            Expandir Pedido
           </button>
         )}
 
-        {compact && (
+        {order.status === "pending" && !compact && (
           <button
-            onClick={() => setShowDetails(true)}
-            className="text-[10px] text-text-muted hover:text-accent transition-colors font-bold uppercase tracking-wider"
+            onClick={() => onCancel(order.id)}
+            className="w-full mt-4 text-[9px] font-black uppercase tracking-[0.2em] text-red-500/50 hover:text-red-400 transition-colors"
           >
-            Ver detalhes →
+            Cancelar Pedido
           </button>
         )}
       </div>
-
       {showDetails && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div
