@@ -12,10 +12,6 @@ export async function POST(req: Request) {
 
     const { tenantId, order_data, items, use_mp, mp_form_data } = body;
 
-    console.log("🧾 CHECKOUT START");
-    console.log("tenantId:", tenantId);
-    console.log("items:", items);
-
     /* ───────────────────────── VALIDATION ───────────────────────── */
 
     if (!tenantId) {
@@ -31,7 +27,6 @@ export async function POST(req: Request) {
 
     for (const item of items) {
       if (!item.id) {
-        console.error("❌ Item sem ID:", item);
         return NextResponse.json(
           { error: "Item inválido (sem ID)." },
           { status: 400 },
@@ -65,7 +60,6 @@ export async function POST(req: Request) {
       .single();
 
     if (customerErr || !customer) {
-      console.error("❌ CUSTOMER ERROR:", customerErr);
       return NextResponse.json(
         { error: "Erro ao processar cliente." },
         { status: 500 },
@@ -76,16 +70,11 @@ export async function POST(req: Request) {
 
     const productIds = items.map((i: any) => i.id);
 
-    console.log("🔍 productIds:", productIds);
-
     const { data: dbProducts, error: prodErr } = await supabaseAdmin
       .from("products")
       .select("id, price, tenant_id")
       .in("id", productIds)
       .eq("tenant_id", tenantId);
-
-    console.log("📦 dbProducts:", dbProducts);
-    console.log("⚠️ prodErr:", prodErr);
 
     if (prodErr) {
       return NextResponse.json(
@@ -109,17 +98,22 @@ export async function POST(req: Request) {
       const dbPrice = priceMap.get(item.id);
 
       if (!dbPrice) {
-        console.error("❌ Produto não encontrado no tenant:", item.id);
         return NextResponse.json(
           { error: "Produto inválido." },
           { status: 400 },
         );
       }
 
-      safeSubtotal += dbPrice * item.quantity;
-    }
+      const addonsTotal =
+        item.selected_addons?.reduce(
+          (sum: number, addon: any) => sum + Number(addon.price),
+          0,
+        ) ?? 0;
 
-    console.log("💰 safeSubtotal:", safeSubtotal);
+      const itemTotal = (Number(dbPrice) + addonsTotal) * Number(item.quantity);
+
+      safeSubtotal += itemTotal;
+    }
 
     /* ───────────────────────── DELIVERY ───────────────────────── */
 
@@ -132,9 +126,6 @@ export async function POST(req: Request) {
 
     const safeDeliveryFee = zone?.fee ?? 0;
     const safeTotal = safeSubtotal + safeDeliveryFee;
-
-    console.log("🚚 deliveryFee:", safeDeliveryFee);
-    console.log("💳 total:", safeTotal);
 
     /* ───────────────────────── CREATE ORDER ───────────────────────── */
 
@@ -156,7 +147,6 @@ export async function POST(req: Request) {
       .single();
 
     if (orderErr || !order) {
-      console.error("❌ ORDER ERROR:", orderErr);
       return NextResponse.json(
         { error: "Erro ao criar pedido." },
         { status: 500 },
@@ -180,8 +170,6 @@ export async function POST(req: Request) {
       .insert(orderItems);
 
     if (itemsErr) {
-      console.error("❌ ITEMS ERROR:", itemsErr);
-
       await supabaseAdmin
         .from("orders")
         .update({
@@ -199,8 +187,6 @@ export async function POST(req: Request) {
     /* ───────────────────────── MERCADO PAGO ───────────────────────── */
 
     if (use_mp) {
-      console.log("💳 Iniciando pagamento MP");
-
       if (!mp_form_data?.token) {
         return NextResponse.json({ error: "Token inválido." }, { status: 400 });
       }
@@ -283,8 +269,6 @@ export async function POST(req: Request) {
       });
       const mpPayment = await mpRes.json();
 
-      console.log("📡 MP RESPONSE:", mpPayment);
-
       if (!mpRes.ok) {
         await supabaseAdmin
           .from("orders")
@@ -327,8 +311,6 @@ export async function POST(req: Request) {
       orderId: order.id,
     });
   } catch (error) {
-    console.error("🔥 CHECKOUT ERROR:", error);
-
     return NextResponse.json({ error: "Erro interno." }, { status: 500 });
   }
 }
