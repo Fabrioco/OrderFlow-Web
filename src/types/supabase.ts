@@ -125,28 +125,21 @@ export interface Customer {
 /* ── Order ────────────────────────────────────────────────── */
 export interface Order {
   id: string;
-  tenant_id: string;
-  customer_id: string;
   order_number: number;
   status: OrderStatus;
-  payment_method: PaymentMethod;
-  payment_status: PaymentStatus;
+  total: number;
   subtotal: number;
   delivery_fee: number;
-  total: number;
-  observation: string | null;
-  delivery_address: {
-    street: string;
-    number: string;
-    neighborhood: string;
-    complement?: string;
-  } | null;
-  estimated_delivery_time: string | null;
+  payment_method: string;
   created_at: string;
-  updated_at: string;
-  // joined
-  customers?: Customer;
-  order_items?: OrderItem[];
+  delivery_address: any;
+  order_items: {
+    id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    selected_addons?: { name: string; price: number }[];
+  }[];
 }
 
 /* ── Order Item ───────────────────────────────────────────── */
