@@ -325,6 +325,7 @@ export default function AdminRevenuePage() {
                   credit_card: "Crédito",
                   debit_card: "Débito",
                   not_required: "Presencial",
+                  card_on_delivery: "Cartão na Entrega",
                 };
                 return (
                   <div key={method}>
