@@ -11,84 +11,122 @@ import {
 import { createClient } from "@/utils/supabase/client";
 
 const NAV_ITEMS = [
-  { href: "/admin",          label: "Dashboard",        icon: ChartBarIcon },
-  { href: "/admin/tenants",  label: "Tenants",          icon: BuildingStorefrontIcon },
-  { href: "/admin/revenue",  label: "Revenue",          icon: CurrencyDollarIcon },
+  {
+    href: "/admin",
+    label: "Dashboard",
+    icon: ChartBarIcon,
+    shortLabel: "Dash",
+  },
+  {
+    href: "/admin/tenants",
+    label: "Tenants",
+    icon: BuildingStorefrontIcon,
+    shortLabel: "Tenants",
+  },
+  {
+    href: "/admin/revenue",
+    label: "Revenue",
+    icon: CurrencyDollarIcon,
+    shortLabel: "Revenue",
+  },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
   const supabase = createClient();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
+    const confirm = window.confirm("Deseja realmente sair?");
+    if (confirm) {
+      await supabase.auth.signOut();
+      router.push("/login");
+    }
   }
 
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex flex-col py-8 px-4 z-50 border-r border-border">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-2 mb-10">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#C084FC] to-accent flex items-center justify-center shrink-0">
-          <span className="text-[#25005A] font-black text-xs">OF</span>
-        </div>
-        <div>
-          <h1 className="text-base font-bold tracking-tighter text-white leading-none">
-            OrderFlow
-          </h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-0.5">
-            SuperAdmin
-          </p>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                active
-                  ? "bg-[#2A2A2A] text-white"
-                  : "text-text-muted hover:text-white hover:bg-[#2A2A2A]/50"
-              }`}
-            >
-              <Icon
-                className={`w-5 h-5 shrink-0 ${active ? "text-accent" : "text-text-muted"}`}
-              />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* System status */}
-      <div className="mt-auto space-y-3">
-        <div className="p-4 bg-surface rounded-xl border border-border">
-          <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
-            System Status
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-            <span className="text-[11px] font-medium text-white/80">
-              All systems nominal
-            </span>
+    <>
+      {/* --- DESKTOP SIDEBAR (Lateral) --- */}
+      <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex-col py-8 px-4 z-50 border-r border-border">
+        <div className="flex items-center gap-3 px-2 mb-10">
+          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-[#C084FC] to-accent flex items-center justify-center shrink-0">
+            <span className="text-[#25005A] font-black text-xs">OF</span>
+          </div>
+          <div>
+            <h1 className="text-base font-bold tracking-tighter text-white leading-none">
+              OrderFlow
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-0.5">
+              SuperAdmin
+            </p>
           </div>
         </div>
 
-        {/* Logout */}
+        <nav className="flex-1 space-y-1">
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  active
+                    ? "bg-[#2A2A2A] text-white"
+                    : "text-text-muted hover:text-white hover:bg-[#2A2A2A]/50"
+                }`}
+              >
+                <Icon
+                  className={`w-5 h-5 ${active ? "text-accent" : "text-text-muted"}`}
+                />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-red-400 hover:bg-red-500/5 transition-all duration-200"
+          className="mt-auto flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-red-400 hover:bg-red-500/5 transition-all"
         >
-          <ArrowRightOnRectangleIcon className="w-5 h-5 shrink-0" />
+          <ArrowRightOnRectangleIcon className="w-5 h-5" />
           Sair
         </button>
-      </div>
-    </aside>
+      </aside>
+
+      {/* --- MOBILE NAV (Bottom Bar) --- */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1C1B1B]/80 backdrop-blur-lg border-t border-white/5 px-4 pb-6 pt-3">
+        <div className="flex items-center justify-around max-w-md mx-auto">
+          {NAV_ITEMS.map(({ href, shortLabel, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center gap-1 relative py-1"
+              >
+                {active && (
+                  <div className="absolute -top-3 w-8 h-1 bg-accent rounded-full shadow-[0_0_8px_rgba(192,132,252,0.6)]" />
+                )}
+                <Icon
+                  className={`w-6 h-6 ${active ? "text-accent scale-110" : "text-text-muted"}`}
+                />
+                <span
+                  className={`text-[10px] font-bold uppercase ${active ? "text-white" : "text-text-muted"}`}
+                >
+                  {shortLabel}
+                </span>
+              </Link>
+            );
+          })}
+          <button
+            onClick={handleLogout}
+            className="flex flex-col items-center gap-1 py-1 text-text-muted"
+          >
+            <ArrowRightOnRectangleIcon className="w-6 h-6" />
+            <span className="text-[10px] font-bold uppercase">Sair</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }

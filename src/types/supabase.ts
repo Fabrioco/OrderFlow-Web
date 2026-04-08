@@ -13,7 +13,7 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 export type PaymentMethod = "cash" | "pix" | "credit_card" | "debit_card";
 
-export type TenantPlan = "free" | "pro";
+export type TenantPlan = "free" | "essencial" | "basico" | "pro";
 
 export type UserRole = "owner" | "staff";
 
@@ -31,6 +31,9 @@ export interface Tenant {
   city: string | null;
   is_open: boolean;
   plan: TenantPlan;
+  plan_expires_at: string | null;   // novo
+  trial_started_at: string;         // novo
+  is_blocked: boolean;              // novo
   pix_key: string | null;
   pix_key_type: string | null;
   payment_methods: PaymentMethod[];
@@ -41,7 +44,6 @@ export interface Tenant {
   mp_connected_at: string | null;
   created_at: string;
 }
-
 // Versão pública (sem dados sensíveis) — via view tenants_public
 export type TenantPublic = Pick<
   Tenant,
@@ -54,10 +56,26 @@ export type TenantPublic = Pick<
   | "city"
   | "is_open"
   | "plan"
+  | "plan_expires_at"     // novo
+  | "trial_started_at"    // novo
+  | "is_blocked"          // novo
   | "payment_methods"
   | "pix_key_type"
+  | "mp_public_key"
   | "created_at"
 >;
+
+export interface Subscription {
+  id: string;
+  tenant_id: string;
+  plan: TenantPlan;
+  status: "active" | "cancelled" | "expired";
+  started_at: string;
+  expires_at: string | null;
+  mp_payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 /* ── Tenant User ──────────────────────────────────────────── */
 export interface TenantUser {
