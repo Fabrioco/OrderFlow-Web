@@ -125,7 +125,8 @@ export default function UpgradePage() {
     setMpReady(true);
   }, []);
 
-  async function handlePayment(formData: any) {
+  // Substitua a sua handlePayment antiga por esta:
+  async function startCheckout() {
     if (!selectedPlan || !tenant) return;
     setStatus("loading");
     setErrorMsg(null);
@@ -137,37 +138,22 @@ export default function UpgradePage() {
         body: JSON.stringify({
           tenantId: tenant.id,
           plan: selectedPlan,
-          mp_form_data: formData,
+          slug: slug, // para as back_urls
         }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        const reason = data.status_detail
-          ? (MP_REJECTION_REASONS[data.status_detail] ??
-            `Recusado: ${data.status_detail}`)
-          : data.error || "Erro ao processar pagamento.";
-        setStatus("error");
-        setErrorMsg(reason);
-        return;
-      }
-
-      if (data.status === "approved") {
-        setStatus("success");
-        setTimeout(() => router.push(`/${slug}/painel/pedidos`), 2500);
+      if (data.url) {
+        window.location.href = data.url; // Aqui acontece o redirecionamento
       } else {
-        setStatus("idle");
-        setErrorMsg(
-          "Pagamento em processamento. Aguarde a confirmação por email.",
-        );
+        throw new Error(data.error || "Erro ao redirecionar");
       }
-    } catch {
+    } catch (err: any) {
       setStatus("error");
-      setErrorMsg("Erro de conexão. Tente novamente.");
+      setErrorMsg(err.message);
     }
   }
-
   const current = PLANS.find((p) => p.id === selectedPlan);
 
   if (!tenant) {
@@ -306,7 +292,6 @@ export default function UpgradePage() {
                 </p>
               </div>
             </div>
-
             {/* Estado: sucesso */}
             {status === "success" && (
               <div className="py-10 flex flex-col items-center justify-center gap-3">
@@ -323,7 +308,6 @@ export default function UpgradePage() {
                 </p>
               </div>
             )}
-
             {/* Estado: loading */}
             {status === "loading" && (
               <div className="py-10 flex flex-col items-center justify-center gap-3">
@@ -333,37 +317,40 @@ export default function UpgradePage() {
                 </p>
               </div>
             )}
-
             {/* Estado: formulário */}
             {(status === "idle" || status === "error") && (
-              <>
+              <div className="flex flex-col gap-6">
                 {errorMsg && (
-                  <div className="mb-5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                     {errorMsg}
                   </div>
                 )}
-                <Payment
-                  key={selectedPlan}
-                  initialization={{ amount: current!.price }}
-                  onSubmit={async (formData) => {
-                    await handlePayment(formData);
-                  }}
-                  onError={(error) => {
-                    console.error(error);
-                    setErrorMsg("Erro no formulário de pagamento.");
-                    setStatus("error");
-                  }}
-                  customization={{
-                    paymentMethods: {
-                      creditCard: "all",
-                      debitCard: "all",
-                      ticket: "all",
-                      bankTransfer: "all",
-                    },
-                  }}
-                />
-              </>
-            )}
+
+                <div className="bg-surface-alt/50 border border-border p-6 rounded-2xl">
+                  <h4 className="text-sm font-bold text-text mb-2">
+                    Método de Pagamento
+                  </h4>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    Você será redirecionado para o ambiente seguro do{" "}
+                    <strong>Mercado Pago</strong> para concluir o pagamento via
+                    Pix, Cartão ou Boleto.
+                  </p>
+                </div>
+
+                <button
+                  onClick={startCheckout}
+                  disabled={status === "loading"}
+                  className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 
+        ${current?.accentClass.replace("text", "bg")} text-[#25005A] hover:opacity-90 shadow-lg`}
+                >
+                  {status === "loading" ? (
+                    <SpinnerIcon size={18} className="animate-spin" />
+                  ) : (
+                    "Ir para Pagamento"
+                  )}
+                </button>
+              </div>
+            )}{" "}
           </div>
         )}
 
