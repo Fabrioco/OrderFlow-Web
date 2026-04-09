@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
+import { initMercadoPago } from "@mercadopago/sdk-react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Lightning,
@@ -12,6 +12,7 @@ import {
   SpinnerIcon,
 } from "@phosphor-icons/react";
 import { useTenant } from "@/hooks/useTenant";
+import { createClient } from "@/utils/supabase/client";
 
 type PlanType = "essencial" | "basico" | "pro";
 
@@ -82,37 +83,15 @@ const PLANS: {
   },
 ];
 
-// Cola isso antes do componente, junto com os outros consts:
-const MP_REJECTION_REASONS: Record<string, string> = {
-  cc_rejected_insufficient_amount: "Saldo insuficiente no cartão.",
-  cc_rejected_bad_filled_card_number: "Número do cartão inválido.",
-  cc_rejected_bad_filled_date: "Data de validade inválida.",
-  cc_rejected_bad_filled_security_code: "Código de segurança (CVV) inválido.",
-  cc_rejected_bad_filled_other: "Dados do cartão incorretos.",
-  cc_rejected_blacklist: "Cartão não autorizado pelo banco.",
-  cc_rejected_call_for_authorize:
-    "Ligue para o banco para autorizar o pagamento.",
-  cc_rejected_card_disabled: "Cartão desativado. Entre em contato com o banco.",
-  cc_rejected_card_error: "Erro ao processar o cartão. Tente novamente.",
-  cc_rejected_duplicated_payment:
-    "Pagamento duplicado. Aguarde alguns minutos.",
-  cc_rejected_high_risk:
-    "Pagamento recusado por segurança. Tente outro cartão.",
-  cc_rejected_max_attempts: "Limite de tentativas atingido. Tente mais tarde.",
-  cc_rejected_other_reason: "Cartão recusado pelo banco.",
-  rejected_by_bank: "Recusado pelo banco emissor.",
-  rejected_insufficient_data: "Dados insuficientes para processar.",
-  pending_contingency: "Pagamento em análise pelo banco.",
-  pending_review_manual: "Pagamento em revisão. Aguarde a confirmação.",
-};
-
 export default function UpgradePage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { tenant } = useTenant(slug);
+  const supabase = createClient();
 
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [mpReady, setMpReady] = useState(false);
+  const [isAllowed, setIsAllowed] = useState<boolean | null>(null);
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -156,10 +135,46 @@ export default function UpgradePage() {
   }
   const current = PLANS.find((p) => p.id === selectedPlan);
 
+  useEffect(() => {
+    async function checkAccess() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || !tenant) {
+        setIsAllowed(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("tenant_users")
+        .select("id")
+        .eq("tenant_id", tenant.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      setIsAllowed(!!data);
+    }
+
+    checkAccess();
+  }, [tenant]);
+
   if (!tenant) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-accent" />
+      </div>
+    );
+  }
+
+  if (isAllowed === null) {
+    return <div>Carregando...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-400">Acesso negado</p>
       </div>
     );
   }
@@ -339,15 +354,10 @@ export default function UpgradePage() {
 
                 <button
                   onClick={startCheckout}
-                  disabled={status === "loading"}
                   className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 
-        ${current?.accentClass.replace("text", "bg")} text-[#25005A] hover:opacity-90 shadow-lg`}
+                ${current?.accentClass.replace("text", "bg")} text-[#25005A] hover:opacity-90 shadow-lg`}
                 >
-                  {status === "loading" ? (
-                    <SpinnerIcon size={18} className="animate-spin" />
-                  ) : (
-                    "Ir para Pagamento"
-                  )}
+                  Ir para Pagamento
                 </button>
               </div>
             )}{" "}
