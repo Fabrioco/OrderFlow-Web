@@ -95,7 +95,10 @@ export async function POST(req: Request) {
     // ❌ pagamento recusado
     if (mpPayment.status === "rejected") {
       return NextResponse.json(
-        { error: "Pagamento recusado." },
+        {
+          error: "Pagamento recusado.",
+          status_detail: mpPayment.status_detail ?? null,
+        },
         { status: 400 },
       );
     }
