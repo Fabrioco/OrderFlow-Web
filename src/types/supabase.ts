@@ -31,9 +31,9 @@ export interface Tenant {
   city: string | null;
   is_open: boolean;
   plan: TenantPlan;
-  plan_expires_at: string | null;   // novo
-  trial_started_at: string;         // novo
-  is_blocked: boolean;              // novo
+  plan_expires_at: string | null; // novo
+  trial_started_at: string; // novo
+  is_blocked: boolean; // novo
   pix_key: string | null;
   pix_key_type: string | null;
   payment_methods: PaymentMethod[];
@@ -56,9 +56,9 @@ export type TenantPublic = Pick<
   | "city"
   | "is_open"
   | "plan"
-  | "plan_expires_at"     // novo
-  | "trial_started_at"    // novo
-  | "is_blocked"          // novo
+  | "plan_expires_at" // novo
+  | "trial_started_at" // novo
+  | "is_blocked" // novo
   | "payment_methods"
   | "pix_key_type"
   | "mp_public_key"
@@ -141,24 +141,41 @@ export interface Customer {
 }
 
 /* ── Order ────────────────────────────────────────────────── */
-export interface Order {
+
+export type Order = {
   id: string;
   order_number: number;
   status: OrderStatus;
-  total: number;
+  payment_method: string;
   subtotal: number;
   delivery_fee: number;
-  payment_method: string;
+  total: number;
+  observation: string | null;
+  delivery_address: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city?: string;
+    complement?: string;
+  } | null;
   created_at: string;
-  delivery_address: any;
+  customers: { name: string; phone: string } | null;
   order_items: {
     id: string;
     product_name: string;
     quantity: number;
     unit_price: number;
-    selected_addons?: { name: string; price: number }[];
+    selected_addons: { name: string; price: number }[] | null;
+    observation: string | null;
   }[];
-}
+  bills?: {
+    table_id: string;
+    tables: {
+      number: number;
+      label: string | null;
+    };
+  } | null;
+};
 
 /* ── Order Item ───────────────────────────────────────────── */
 export interface OrderItem {

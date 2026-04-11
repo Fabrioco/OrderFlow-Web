@@ -29,6 +29,7 @@ const NAV_ITEMS = [
     icon: CurrencyDollarIcon,
     shortLabel: "Revenue",
   },
+
 ];
 
 export function AdminSidebar() {
