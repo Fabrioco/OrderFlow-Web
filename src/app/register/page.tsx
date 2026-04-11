@@ -29,6 +29,11 @@ export default function Register() {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
       const name = formData.get("name") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
+
+      if (password !== confirmPassword) {
+        throw new Error("As senhas não coincidem");
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -36,10 +41,11 @@ export default function Register() {
         options: { data: { full_name: name } },
       });
 
-      if (error) throw new Error(error.message);
-      return data;
-    };
+      if (error) throw error;
 
+      return data; // <- isso aqui é o tipo correto
+    };
+    
     toast.promise(promise(), {
       loading: "Criando sua conta...",
       success: (data) => {

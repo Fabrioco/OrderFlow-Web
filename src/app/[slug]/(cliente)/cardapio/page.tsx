@@ -172,6 +172,9 @@ export default function MenuPage() {
     }
     if (!tenant) return;
 
+    const customer_phone = form.phone.replace(/\D/g, "");
+    localStorage.setItem("customer_phone", customer_phone);
+
     setProcessing(true);
     try {
       const res = await fetch("/api/mp/checkout", {

@@ -54,7 +54,7 @@ export function OrdersHeader({ slug }: OrdersHeaderProps) {
     <nav className="sticky top-0 z-50 bg-[#131313]/80 backdrop-blur-md border-b border-[#353534] px-6 h-16 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => router.push(`/${slug}`)}
+          onClick={() => router.push(`/${slug}/cardapio`)}
           className="text-[#ccc3d8] hover:text-white transition-colors"
         >
           <CaretLeftIcon size={24} weight="bold" />

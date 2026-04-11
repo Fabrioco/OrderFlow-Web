@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { OrdersHeader, OrderCard, OrdersEmptyState } from "@/components/[slug]/(clientes)/pedidos";
+import {
+  OrdersHeader,
+  OrderCard,
+  OrdersEmptyState,
+} from "@/components/[slug]/(clientes)/pedidos";
 
 export default function MyOrdersPage() {
   const { slug } = useParams();
@@ -24,12 +28,29 @@ export default function MyOrdersPage() {
 
         if (!tenant) return;
 
+        const phone = localStorage.getItem("customer_phone");
+        const formattedPhone = phone?.replace(/\D/g, "");
+
+        if (!phone) {
+          setOrders([]);
+          return;
+        }
+
         const { data, error } = await supabase
           .from("orders")
           .select(
-            `id, order_number, status, total, created_at, order_items (product_name, quantity)`,
+            `
+            id,
+            order_number,
+            status,
+            total,
+            created_at,
+            order_items (product_name, quantity),
+            customers (phone)
+          `,
           )
           .eq("tenant_id", tenant.id)
+          .eq("customers.phone", formattedPhone)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -51,12 +72,12 @@ export default function MyOrdersPage() {
     );
   }
 
-  if(!slug) {
+  if (!slug) {
     return (
       <div className="min-h-screen bg-[#131313] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#D2BBFF]" />
       </div>
-    )
+    );
   }
 
   return (

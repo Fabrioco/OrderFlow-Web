@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { useSound } from "@/hooks/useSound";
+import { Order } from "@/types/supabase";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -28,34 +29,6 @@ type OrderStatus =
   | "out_for_delivery"
   | "delivered"
   | "cancelled";
-
-type Order = {
-  id: string;
-  order_number: number;
-  status: OrderStatus;
-  payment_method: string;
-  subtotal: number;
-  delivery_fee: number;
-  total: number;
-  observation: string | null;
-  delivery_address: {
-    street: string;
-    number: string;
-    neighborhood: string;
-    city?: string;
-    complement?: string;
-  } | null;
-  created_at: string;
-  customers: { name: string; phone: string } | null;
-  order_items: {
-    id: string;
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-    selected_addons: { name: string; price: number }[] | null;
-    observation: string | null;
-  }[];
-};
 
 /* ── Status helpers ──────────────────────────────────────────── */
 
@@ -116,7 +89,20 @@ export default function Dashboard() {
 
       const { data, error } = await supabase
         .from("orders")
-        .select("*, customers(name, phone), order_items(*)")
+        .select(
+          `
+  *,
+  customers(name, phone),
+  order_items(*),
+  bills (
+    table_id,
+    tables (
+      number,
+      label
+    )
+  )
+`,
+        )
         .eq("tenant_id", tenantId)
         .gte("created_at", todayStart)
         .order("created_at", { ascending: false });
