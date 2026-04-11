@@ -123,8 +123,14 @@ export default function OrderTrackingPage() {
           <InfoCard
             icon={<MapPin size={20} className="text-primary" />}
             label="Endereço de Entrega"
-            value={`${order?.delivery_address.street}, ${order?.delivery_address.number} - ${order?.delivery_address.neighborhood}`}
-            sub={`${order?.delivery_address.complement && `- ${order?.delivery_address.complement}`}`}
+            value={
+              order.delivery_address &&
+              (`${order?.delivery_address.street}, ${order?.delivery_address.number} - ${order?.delivery_address.neighborhood}` as string)
+            }
+            sub={
+              order.delivery_address &&
+              `${order?.delivery_address.complement && `- ${order?.delivery_address.complement}`}`
+            }
           />
           <InfoCard
             icon={<Timer size={20} className="text-primary" />}

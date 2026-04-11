@@ -8,8 +8,8 @@ export function InfoCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
-  sub: string;
+  value: string | null;
+  sub: string| null;
 }) {
   return (
     <div className="bg-[#0e0e0e] p-5 rounded-3xl border border-[#353534] flex gap-4 items-start">
