@@ -477,7 +477,7 @@ function OrderCard({
       </head>
       <body>
         <div class="header center">
-          <div class="restaurant-name bold uppercase">${order.tenant?.name || "RESTAURANTE"}</div>
+          <div class="restaurant-name bold uppercase">${order.customers?.name || "RESTAURANTE"}</div>
           <div class="info-sm">Data: ${new Date(order.created_at).toLocaleString("pt-BR")}</div>
         </div>
 
