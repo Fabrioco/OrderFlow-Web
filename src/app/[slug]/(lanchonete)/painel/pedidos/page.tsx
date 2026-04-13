@@ -10,6 +10,7 @@ import {
   MapPin,
   Bell,
   BellSlash,
+  PrinterIcon,
 } from "@phosphor-icons/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +20,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { useSound } from "@/hooks/useSound";
 import { Order } from "@/types/supabase";
+import Link from "next/link";
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -329,6 +331,7 @@ export default function Dashboard() {
               order={order}
               onUpdateStatus={handleUpdateStatus}
               onCancel={handleCancelOrder}
+              slug={slug}
             />
           ))}
 
@@ -355,6 +358,7 @@ export default function Dashboard() {
                   onUpdateStatus={handleUpdateStatus}
                   onCancel={handleCancelOrder}
                   compact
+                  slug={slug}
                 />
               ))}
             </div>
@@ -374,174 +378,19 @@ function OrderCard({
   onUpdateStatus,
   onCancel,
   compact = false,
+  slug,
 }: {
   order: Order;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
   onCancel: (id: string) => void;
   compact?: boolean;
+  slug?: string;
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const isDone = ["delivered", "cancelled"].includes(order.status);
   const hasNext = !!STATUS_NEXT[order.status];
   const whatsapp = `https://wa.me/55${order.customers?.phone.replace(/\D/g, "")}`;
 
-  function handlePrint(order: Order) {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const itemsHtml = order.order_items
-      ?.map((item) => {
-        const basePrice = Number(item.unit_price);
-        const addons =
-          item.selected_addons
-            ?.map(
-              (a) => `
-          <div class="sub-item-row">
-            <span class="addon-name">+ ${a.name}</span>
-            <span class="sub-price">R$ ${Number(a.price).toFixed(2).replace(".", ",")}</span>
-          </div>
-        `,
-            )
-            .join("") || "";
-
-        const observation = item.observation
-          ? `<div class="item-obs">* Obs: ${item.observation}</div>`
-          : "";
-
-        return `
-        <div class="item-container">
-          <div class="item-main">
-            <span>${item.quantity}x ${item.product_name}</span>
-            <span class="price">R$ ${basePrice.toFixed(2).replace(".", ",")}</span>
-          </div>
-          ${addons}
-          ${observation}
-        </div>
-      `;
-      })
-      .join("");
-
-    printWindow.document.write(`
-    <html>
-      <head>
-        <title>Pedido #${order.order_number}</title>
-        <style>
-          /* Configurações de Impressão - Remove URL e cabeçalhos */
-          @page { 
-            margin: 0; 
-          }
-          
-          @media print {
-            body { 
-              margin: 0; 
-              padding: 15mm 10mm; /* Margem interna para não cortar o texto no papel */
-            }
-            * { -webkit-print-color-adjust: exact; }
-          }
-
-          /* Estilos Visuais */
-          * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
-          
-          body { 
-            width: 300px; 
-            padding: 15px; 
-            color: #000; 
-            background: #fff; 
-          }
-          
-          .center { text-align: center; }
-          .bold { font-weight: bold; }
-          .uppercase { text-transform: uppercase; }
-          
-          .header { margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 8px; }
-          .restaurant-name { font-size: 18px; margin-bottom: 4px; }
-          .info-sm { font-size: 12px; }
-          
-          .order-title { font-size: 16px; margin: 10px 0; border-bottom: 1px solid #000; padding-bottom: 4px; }
-          
-          .section { margin-bottom: 10px; font-size: 13px; line-height: 1.4; }
-          .section-label { font-weight: bold; text-decoration: underline; margin-bottom: 6px; display: block; }
-          
-          .item-container { margin-bottom: 12px; font-size: 13px; }
-          .item-main { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 2px; }
-          
-          .sub-item-row { display: flex; justify-content: space-between; font-size: 11px; margin-left: 15px; color: #333; }
-          .item-obs { font-size: 11px; margin-left: 15px; font-style: italic; margin-top: 2px; color: #555; }
-          
-          .divider { border-top: 1px solid #000; margin: 8px 0; }
-          .dot-divider { border-top: 1px dashed #000; margin: 8px 0; }
-          
-          .fee-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
-          .total-container { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-top: 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="header center">
-          <div class="restaurant-name bold uppercase">${order.customers?.name || "RESTAURANTE"}</div>
-          <div class="info-sm">Data: ${new Date(order.created_at).toLocaleString("pt-BR")}</div>
-        </div>
-
-        <div class="order-title bold">PEDIDO: #${String(order.order_number).padStart(4, "0")}</div>
-
-        <div class="section">
-          <span class="bold">CLIENTE:</span> ${order.customers?.name || "Não informado"}<br/>
-          <span class="bold">TEL:</span> ${order.customers?.phone || "-"}
-        </div>
-
-        <div class="section">
-          <span class="section-label">ITENS DO PEDIDO:</span>
-          ${itemsHtml}
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="section">
-          <span class="bold">ENDEREÇO DE ENTREGA:</span><br/>
-          ${
-            order.delivery_address
-              ? `
-            ${order.delivery_address.street}, ${order.delivery_address.number}<br/>
-            ${order.delivery_address.neighborhood} - ${order.delivery_address.city || "SP"}
-          `
-              : "Retirada no Local"
-          }
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="section">
-          <div class="fee-row">
-            <span>FORMA DE PAGTO:</span>
-            <span class="bold uppercase">${order.payment_method === "pix" ? "PIX (PAGO)" : "A PAGAR"}</span>
-          </div>
-          <div class="fee-row">
-            <span>TAXA DE ENTREGA:</span>
-            <span>R$ ${Number(order.delivery_fee || 0)
-              .toFixed(2)
-              .replace(".", ",")}</span>
-          </div>
-        </div>
-
-        <div class="dot-divider"></div>
-        
-        <div class="total-container">
-          <span>TOTAL:</span>
-          <span>R$ ${Number(order.total).toFixed(2).replace(".", ",")}</span>
-        </div>
-        
-        <div class="dot-divider"></div>
-        <div class="center info-sm" style="margin-top: 10px;">Obrigado pela preferência!</div>
-      </body>
-    </html>
-  `);
-
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }, 400); // Aumentei um pouco o delay para garantir que o CSS carregue no browser
-  }
   return (
     <>
       <div
@@ -655,14 +504,13 @@ function OrderCard({
               >
                 Detalhes
               </button>
-
-              <button
-                onClick={() => handlePrint(order)}
-                className="flex items-center justify-center py-3 rounded-2xl font-bold bg-white/5 border border-white/10 text-text text-xs hover:bg-white/10 transition-all active:scale-95"
+              <Link
+                href={`/${slug}/painel/print/${order.id}`}
+                className="flex items-center justify-center gap-1.5 py-3 rounded-2xl font-bold bg-white/5 border border-white/10 text-text text-xs hover:bg-white/10 transition-all active:scale-95"
               >
+                <PrinterIcon size={14} weight="bold" />
                 Imprimir
-              </button>
-
+              </Link>{" "}
               {/* Botão de Próximo Passo ocupando a largura total da grid interna */}
               <div className="col-span-2">
                 {hasNext ? (
