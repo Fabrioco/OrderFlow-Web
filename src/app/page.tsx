@@ -1,7 +1,5 @@
 "use client";
 import React from "react";
-import { CaretRightIcon } from "@phosphor-icons/react/ssr";
-import Link from "next/link";
 import { FooterWithModals } from "@/components/home/LegalModals";
 import { Header } from "@/components/home/Header";
 import { Hero } from "@/components/home/Hero";
