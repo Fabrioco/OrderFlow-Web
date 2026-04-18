@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   TimerIcon,
@@ -9,6 +10,13 @@ import {
 import Link from "next/link";
 
 export default function Home() {
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
       {/* BACKGROUND DECORATION */}
@@ -22,15 +30,24 @@ export default function Home() {
             OrderFlow
           </span>
           <nav className="hidden md:flex gap-8 text-sm font-medium text-text-secondary">
-            <Link href="#" className="hover:text-text transition-colors">
+            <button
+              onClick={() => scrollTo("hero")}
+              className="hover:text-text transition-colors"
+            >
               Plataforma
-            </Link>
-            <Link href="#" className="hover:text-text transition-colors">
+            </button>
+            <button
+              onClick={() => scrollTo("features")}
+              className="hover:text-text transition-colors"
+            >
               Soluções
-            </Link>
-            <Link href="#" className="hover:text-text transition-colors">
+            </button>
+            <button
+              onClick={() => scrollTo("prices")}
+              className="hover:text-text transition-colors"
+            >
               Preços
-            </Link>
+            </button>
           </nav>
         </div>
 
@@ -52,7 +69,10 @@ export default function Home() {
 
       {/* HERO SECTION */}
       <section className="pt-44 pb-20 px-6 text-center max-w-5xl mx-auto relative">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface-alt text-[10px] uppercase tracking-[0.2em] font-bold text-text-muted mb-8">
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-surface-alt text-[10px] uppercase tracking-[0.2em] font-bold text-text-muted mb-8"
+          id="hero"
+        >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           Acesso Antecipado
         </div>
@@ -70,6 +90,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link
             href="/register"
+            prefetch
             className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-linear-to-br from-[#C084FC] to-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent/20 text-white"
           >
             Criar minha lanchonete
@@ -99,7 +120,7 @@ export default function Home() {
       </section>
 
       {/* FEATURES GRID */}
-      <section className="py-24 px-6 max-w-6xl mx-auto">
+      <section className="py-24 px-6 max-w-6xl mx-auto" id="features">
         <div className="grid md:grid-cols-3 gap-6">
           <FeatureCard
             icon={<TimerIcon size={24} weight="duotone" />}
@@ -120,7 +141,7 @@ export default function Home() {
       </section>
 
       {/* PRICING SECTION */}
-      <section id="pricing" className="py-32 px-6 relative">
+      <section id="prices" className="py-32 px-6 relative">
         <div className="text-center mb-16">
           <span className="text-[10px] uppercase tracking-[0.3em] font-black text-accent">
             Planos
@@ -130,34 +151,17 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="flex gap-8 max-w-6xl mx-auto items-center justify-center">
           <PricingCard
-            title="Starter"
-            price="0"
-            features={["Até 50 pedidos/dia", "Cardápio Digital"]}
+            title="Essencial"
+            price="29,90"
+            features={[
+              "Pedidos Ilimitados",
+              "Cardápio Digital",
+              "Impressão de etiquetas",
+              "Teste 100% gratuito (14 dias)",
+            ]}
             buttonText="Começar grátis"
-          />
-          <PricingCard
-            title="Pro"
-            price="149"
-            features={[
-              "Pedidos ilimitados",
-              "Métricas avançadas",
-              "Suporte prioritário",
-              "Custom Branding",
-            ]}
-            buttonText="Escolher Pro"
-            highlighted
-          />
-          <PricingCard
-            title="Enterprise"
-            price="Custom"
-            features={[
-              "Multi-unidades",
-              "API de Integração",
-              "Gerente de conta",
-            ]}
-            buttonText="Falar com vendas"
           />
         </div>
       </section>
@@ -170,7 +174,7 @@ export default function Home() {
           </h2>
           <Link
             href="/register"
-            className="group px-12 py-5 rounded-2xl text-xl font-bold bg-linear-to-r from-[#C084FC] to-accent hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] transition-all flex items-center gap-3 mx-auto text-white"
+            className="group px-12 py-5 w-fit rounded-2xl text-xl font-bold bg-linear-to-r from-[#C084FC] to-accent hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] transition-all flex items-center gap-3 mx-auto text-white"
           >
             Criar minha lanchonete agora
             <CaretRightIcon
