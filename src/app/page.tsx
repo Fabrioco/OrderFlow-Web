@@ -8,6 +8,7 @@ import {
   CaretRightIcon,
 } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
+import { FooterWithModals } from "@/components/home/LegalModals";
 
 export default function Home() {
   const scrollTo = (id: string) => {
@@ -190,26 +191,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 px-12 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-text-muted text-[10px] tracking-widest font-bold uppercase">
-        <div className="text-center md:text-left">
-          <p className="text-text-secondary mb-1">OrderFlow Solutions</p>
-          <p>© 2026 ORDERFLOW. Todos os direitos reservados.</p>
-        </div>
-        <div className="flex gap-8">
-          <Link href="#" className="hover:text-text transition-colors">
-            Termos
-          </Link>
-          <Link href="#" className="hover:text-text transition-colors">
-            Privacidade
-          </Link>
-          <Link href="#" className="hover:text-text transition-colors">
-            Status
-          </Link>
-          <Link href="#" className="hover:text-text transition-colors">
-            Contatos
-          </Link>
-        </div>
-      </footer>
+      <FooterWithModals />
     </main>
   );
 }
