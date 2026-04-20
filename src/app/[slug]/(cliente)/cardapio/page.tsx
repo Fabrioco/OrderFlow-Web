@@ -138,11 +138,16 @@ export default function MenuPage() {
 
   /* ── Handlers de Produto ── */
   function handleProductClick(product: Product) {
-    if (addons.length > 0) {
+    const isBeverage = product.categories?.name === "Bebidas";
+
+    if (isBeverage || addons.length === 0) {
+      // Bebida ou sem adicionais: adiciona direto
+      addToCart(product, []);
+      toast.success(`${product.name} adicionado!`);
+    } else {
+      // Outros com adicionais: abre o modal
       setCustomizingProduct(product);
       setSelectedAddons([]);
-    } else {
-      addToCart(product, []);
     }
   }
 
