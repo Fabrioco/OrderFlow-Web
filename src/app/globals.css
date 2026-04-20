@@ -121,6 +121,6 @@
 /* ── Gradiente de texto ──────────────────────────────────────── */
 .text-gradient {
   background: linear-gradient(to right, #c084fc, #8b5cf6);
-  -background-clip: text;
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
