@@ -25,7 +25,7 @@ export function Hero() {
         <Link
           href="/register"
           prefetch
-          className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-linear-to-br from-[#C084FC] to-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent/20 text-white"
+          className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-lg bg-linear-to-br from-[#C084FC] to-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent/20 text-menu-text"
         >
           Criar minha lanchonete
         </Link>

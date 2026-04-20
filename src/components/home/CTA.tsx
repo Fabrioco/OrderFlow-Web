@@ -10,7 +10,7 @@ export function CTA() {
         </h2>
         <Link
           href="/register"
-          className="group px-12 py-5 w-fit rounded-2xl text-xl font-bold bg-linear-to-r from-[#C084FC] to-accent hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] transition-all flex items-center gap-3 mx-auto text-white"
+          className="group px-12 py-5 w-fit rounded-2xl text-xl font-bold bg-linear-to-r from-[#C084FC] to-accent hover:shadow-[0_0_40px_rgba(139,92,246,0.4)] transition-all flex items-center gap-3 mx-auto text-menu-text"
         >
           Criar minha lanchonete agora
           <CaretRightIcon

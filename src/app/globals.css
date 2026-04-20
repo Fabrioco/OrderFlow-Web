@@ -1,6 +1,6 @@
 @import "tailwindcss";
-
 @theme {
+  /* ── Painel / Landing (tema claro/escuro) ── */
   --color-bg: var(--color-bg-raw);
   --color-surface: var(--color-surface-raw);
   --color-surface-alt: var(--color-surface-alt-raw);
@@ -13,10 +13,22 @@
   --color-accent-hover: var(--color-accent-hover-raw);
   --color-danger: var(--color-danger-raw);
   --color-success: var(--color-success-raw);
+
+  /* ── Cardápio do cliente (responde ao tema) ── */
+  --color-menu-bg: var(--color-menu-bg-raw);
+  --color-menu-surface: var(--color-menu-surface-raw);
+  --color-menu-surface-deep: var(--color-menu-surface-deep-raw);
+  --color-menu-footer: var(--color-menu-footer-raw);
+  --color-menu-border: var(--color-menu-border-raw);
+  --color-menu-text: var(--color-menu-text-raw);
+  --color-menu-text-secondary: var(--color-menu-text-secondary-raw);
+  --color-menu-accent: var(--color-menu-accent-raw);
+  --color-menu-accent-on: var(--color-menu-accent-on-raw);
 }
 
-/* ── Tema claro (Opcional, mas ajustado para contraste) ────── */
+/* ── Tema claro ─────────────────────────────────────────────── */
 :root {
+  /* Painel / Landing */
   --color-bg-raw: #ffffff;
   --color-surface-raw: #fcfcfc;
   --color-surface-alt-raw: #f3f4f6;
@@ -29,29 +41,48 @@
   --color-accent-hover-raw: #7c3aed;
   --color-danger-raw: #ef4444;
   --color-success-raw: #22c55e;
+
+  /* Cardápio — light */
+  --color-menu-bg-raw: #f5f4f0;
+  --color-menu-surface-raw: #ffffff;
+  --color-menu-surface-deep-raw: #ebebeb;
+  --color-menu-footer-raw: #f0eff0;
+  --color-menu-border-raw: #c4bdd4;
+  --color-menu-text-raw: #1a1025;
+  --color-menu-text-secondary-raw: #5a5070;
+  --color-menu-accent-raw: #7c3aed;
+  --color-menu-accent-on-raw: #ffffff;
 }
 
-/* ── Tema escuro (Fiel à imagem do OrderFlow) ────────────────── */
+/* ── Tema escuro ─────────────────────────────────────────────── */
 [data-theme="dark"] {
-  /* Fundo preto profundo */
+  /* Painel */
   --color-bg-raw: #050505;
-  /* Superfícies levemente elevadas (cards) */
   --color-surface-raw: #0a0a0a;
   --color-surface-alt-raw: #121212;
-  /* Bordas sutis */
   --color-border-raw: rgba(255, 255, 255, 0.06);
   --color-border-accent-raw: #a78bfa;
-  /* Textos */
   --color-text-raw: #ffffff;
   --color-text-secondary-raw: #a1a1aa;
   --color-text-muted-raw: #52525b;
-  /* Acento: Roxo/Violeta da Imagem */
   --color-accent-raw: #8b5cf6;
   --color-accent-hover-raw: #a78bfa;
   --color-danger-raw: #f87171;
   --color-success-raw: #4ade80;
+
+  /* Cardápio — dark */
+  --color-menu-bg-raw: #131313;
+  --color-menu-surface-raw: #1c1b1b;
+  --color-menu-surface-deep-raw: #0d0d0d;
+  --color-menu-footer-raw: #201f1f;
+  --color-menu-border-raw: #4a4455;
+  --color-menu-text-raw: #e5e2e1;
+  --color-menu-text-secondary-raw: #ccc3d8;
+  --color-menu-accent-raw: #d2bbff;
+  --color-menu-accent-on-raw: #25005a;
 }
 
+/* ── Transições globais ──────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -61,7 +92,7 @@
     color 0.1s ease;
 }
 
-/* Scrollbar fina e moderna */
+/* ── Scrollbar ───────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -77,7 +108,7 @@
   background: rgba(139, 92, 246, 0.4);
 }
 
-/* Efeito de ruído aprimorado */
+/* ── Ruído ───────────────────────────────────────────────────── */
 .bg-noise {
   position: fixed;
   inset: 0;
@@ -87,9 +118,9 @@
   z-index: 1;
 }
 
-/* Utilitário para o gradiente de texto da imagem */
+/* ── Gradiente de texto ──────────────────────────────────────── */
 .text-gradient {
   background: linear-gradient(to right, #c084fc, #8b5cf6);
-  -webkit-background-clip: text;
+  -background-clip: text;
   -webkit-text-fill-color: transparent;
 }

@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export function MenuHeader({ tenant }: { tenant: Tenant }) {
   return (
-    <header className="relative h-64 w-full border-b border-[#4A4455]/20 overflow-hidden">
+    <header className="relative h-64 w-full border-b border-menu-border/20 overflow-hidden">
       {tenant?.logo_url ? (
         <Image
           fill
@@ -30,11 +30,11 @@ export function MenuHeader({ tenant }: { tenant: Tenant }) {
           />
           {tenant.is_open ? "Aberto agora" : "Fechado"}
         </div>
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase italic">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-menu-text uppercase italic">
           {tenant.name}
         </h1>
         {tenant.description && (
-          <p className="text-[#CCC3D8] mt-2 max-w-xl text-sm leading-relaxed">
+          <p className="text-menu-text-secondary mt-2 max-w-xl text-sm leading-relaxed">
             {tenant.description}
           </p>
         )}

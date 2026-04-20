@@ -420,7 +420,7 @@ export default function SettingsProfilePage() {
           <button
             onClick={handleFinish}
             disabled={saving || completedCount < 2}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-sm bg-linear-to-r from-[#C084FC] to-accent text-white hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-sm bg-linear-to-r from-[#C084FC] to-accent text-menu-text hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Ir para o painel
             <CaretRightIcon size={14} weight="bold" />
@@ -536,7 +536,7 @@ export default function SettingsProfilePage() {
                     Logo da lanchonete
                   </p>
                   <div className="flex flex-col gap-2">
-                    <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold cursor-pointer hover:brightness-110 transition">
+                    <label className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-accent text-menu-text text-sm font-bold cursor-pointer hover:brightness-110 transition">
                       Enviar imagem
                       <input
                         type="file"
@@ -748,7 +748,7 @@ export default function SettingsProfilePage() {
                           <CheckIcon
                             size={10}
                             weight="bold"
-                            className="text-white"
+                            className="text-menu-text"
                           />
                         )}
                       </div>
@@ -869,7 +869,7 @@ export default function SettingsProfilePage() {
                 <button
                   onClick={handleFinish}
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-[#C084FC] to-accent text-white text-sm py-3.5 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)] disabled:opacity-40"
+                  className="flex-1 flex items-center justify-center gap-2 bg-linear-to-r from-[#C084FC] to-accent text-menu-text text-sm py-3.5 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(139,92,246,0.3)] disabled:opacity-40"
                 >
                   {saving ? (
                     "Salvando..."
@@ -973,7 +973,7 @@ function NextBtn({ onClick }: { onClick: () => void }) {
     <div className="flex justify-end pt-2">
       <button
         onClick={onClick}
-        className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-[#C084FC] to-accent text-white hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)]"
+        className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-linear-to-r from-[#C084FC] to-accent text-menu-text hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(139,92,246,0.25)]"
       >
         Próximo <CaretRightIcon size={14} weight="bold" />
       </button>

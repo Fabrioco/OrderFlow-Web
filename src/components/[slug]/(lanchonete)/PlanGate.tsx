@@ -78,7 +78,7 @@ export function PlanGate({
       </div>
       <button
         onClick={() => router.push(`/${slug}/upgrade`)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C084FC] to-accent text-white font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C084FC] to-accent text-menu-text font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
       >
         Ver planos <ArrowRight size={14} weight="bold" />
       </button>
@@ -136,7 +136,7 @@ export function TrialBanner({
         </div>
         <button
           onClick={() => router.push(`/${slug}/upgrade`)}
-          className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500 text-white font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500 text-menu-text font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
         >
           Assinar agora <ArrowRight size={12} weight="bold" />
         </button>
@@ -163,7 +163,7 @@ export function TrialBanner({
         </div>
         <button
           onClick={() => router.push(`/${slug}/upgrade`)}
-          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all ${isUrgent ? "bg-amber-500 text-black" : "bg-accent text-white shadow-lg shadow-accent/20"}`}
+          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all ${isUrgent ? "bg-amber-500 text-black" : "bg-accent text-menu-text shadow-lg shadow-accent/20"}`}
         >
           Ver planos <ArrowRight size={12} weight="bold" />
         </button>

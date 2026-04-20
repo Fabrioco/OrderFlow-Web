@@ -16,7 +16,7 @@ export function PricingCard({
       }`}
     >
       {highlighted && (
-        <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-widest text-white bg-accent px-2 py-1 rounded">
+        <span className="absolute top-4 right-4 text-[10px] font-black uppercase tracking-widest text-menu-text bg-accent px-2 py-1 rounded">
           Popular
         </span>
       )}
@@ -47,7 +47,7 @@ export function PricingCard({
       <button
         className={`w-full py-4 rounded-xl font-bold transition-all active:scale-95 ${
           highlighted
-            ? "bg-linear-to-r from-[#C084FC] to-accent text-white hover:brightness-110 shadow-lg shadow-accent/20"
+            ? "bg-linear-to-r from-[#C084FC] to-accent text-menu-text hover:brightness-110 shadow-lg shadow-accent/20"
             : "bg-surface-alt text-text hover:bg-border"
         }`}
       >

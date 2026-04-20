@@ -70,14 +70,14 @@ export default function OrderTrackingPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
+      <div className="min-h-screen bg-menu-bg flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary" />
       </div>
     );
 
   if (!order)
     return (
-      <div className="min-h-screen bg-[#131313] text-white p-10">
+      <div className="min-h-screen bg-menu-bg text-menu-text p-10">
         Pedido não encontrado.
       </div>
     );
@@ -85,12 +85,15 @@ export default function OrderTrackingPage() {
   const StatusIcon = STATUS_CONFIG[order.status].icon;
 
   return (
-    <div className="min-h-screen bg-[#131313] text-[#e5e2e1] font-sans relative pb-20">
+    <div className="min-h-screen bg-menu-bg text-menu-text font-sans relative pb-20">
       <div className="fixed inset-0 opacity-[0.02] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
       {/* Header Fixo */}
-      <nav className="sticky top-0 z-50 bg-[#131313]/90 backdrop-blur-md border-b border-[#353534] px-6 h-16 flex items-center gap-4">
-        <button onClick={() => router.back()} className="text-[#ccc3d8]">
+      <nav className="sticky top-0 z-50 bg-menu-bg/90 backdrop-blur-md border-b border-menu-border px-6 h-16 flex items-center gap-4">
+        <button
+          onClick={() => router.back()}
+          className="text-menu-text-secondary"
+        >
           <CaretLeft size={24} weight="bold" />
         </button>
         <h1 className="font-black italic uppercase tracking-tighter text-lg">
@@ -100,9 +103,9 @@ export default function OrderTrackingPage() {
 
       <main className="p-6 max-w-2xl mx-auto space-y-6">
         {/* Card de Status Principal */}
-        <section className="bg-[#0e0e0e] rounded-[2.5rem] p-8 border border-[#353534] text-center space-y-4">
+        <section className="bg-menu-surface-deep rounded-[2.5rem] p-8 border border-menu-border text-center space-y-4">
           <div
-            className={`mx-auto size-20 rounded-full bg-[#1c1b1b] flex items-center justify-center ${STATUS_CONFIG[order.status].color} shadow-[0_0_40px_rgba(210,187,255,0.1)]`}
+            className={`mx-auto size-20 rounded-full bg-menu-surface flex items-center justify-center ${STATUS_CONFIG[order.status].color} shadow-[0_0_40px_rgba(210,187,255,0.1)]`}
           >
             <StatusIcon size={40} weight="duotone" />
           </div>
@@ -112,7 +115,7 @@ export default function OrderTrackingPage() {
             >
               {STATUS_CONFIG[order.status].label}
             </h2>
-            <p className="text-[#ccc3d8] text-xs font-medium mt-1">
+            <p className="text-menu-text-secondary text-xs font-medium mt-1">
               Atualizado em {format(new Date(), "HH:mm", { locale: ptBR })}
             </p>
           </div>
@@ -121,7 +124,7 @@ export default function OrderTrackingPage() {
         {/* Detalhes da Entrega */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <InfoCard
-            icon={<MapPin size={20} className="text-primary" />}
+            icon={<MapPin size={20} className="text-menu-accent" />}
             label="Endereço de Entrega"
             value={
               order.delivery_address &&
@@ -133,7 +136,7 @@ export default function OrderTrackingPage() {
             }
           />
           <InfoCard
-            icon={<Timer size={20} className="text-primary" />}
+            icon={<Timer size={20} className="text-menu-accent" />}
             label="Tempo Estimado"
             value="30-45 min"
             sub="Previsão de chegada"

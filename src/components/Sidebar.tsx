@@ -6,21 +6,25 @@ import {
   Question,
   SignOut,
   UserSwitchIcon,
+  MoonIcon,
+  SunIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client"; // Ajustei para o padrão do projeto
+import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeProvider";
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === "dark";
 
   const [role, setRole] = useState<string | null>(null);
 
-  // Extrai o slug da URL
   const segments = pathname.split("/");
   const slug = segments[1];
 
@@ -37,13 +41,13 @@ export function Sidebar() {
     },
     {
       icon: Gear,
-      label: "Ajustes", // Encurtado para caber melhor no mobile
+      label: "Ajustes",
       path: `/${slug}/painel/configuracoes`,
     },
     ...(role === "admin"
       ? [
           {
-            icon: UserSwitchIcon, // pode trocar depois
+            icon: UserSwitchIcon,
             label: "Admin",
             path: `/admin`,
           },
@@ -56,25 +60,21 @@ export function Sidebar() {
       try {
         const { data: userData } = await supabase.auth.getUser();
         const userId = userData.user?.id;
-
         if (!userId) return;
-
         const { data, error } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", userId)
           .single();
-
         if (error) throw error;
-
         setRole(data.role);
       } catch (err) {
         console.error("Erro ao buscar role:", err);
       }
     }
-
     loadUserRole();
   }, [supabase]);
+
   async function handleLogout() {
     toast.promise(
       async () => {
@@ -126,6 +126,22 @@ export function Sidebar() {
         </nav>
 
         <div className="space-y-1 border-t border-border pt-6">
+          {/* Toggle tema — desktop */}
+          <button
+            onClick={toggle}
+            aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
+            className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-text transition-colors group"
+          >
+            {isDark ? (
+              <SunIcon size={18} className="text-amber-400" />
+            ) : (
+              <MoonIcon size={18} className="group-hover:text-accent" />
+            )}
+            <span className="text-[10px] font-black uppercase tracking-[0.15em]">
+              {isDark ? "Tema Claro" : "Tema Escuro"}
+            </span>
+          </button>
+
           <Link
             href={`/${slug}/suporte`}
             className="flex items-center gap-3 px-4 py-2 text-text-muted hover:text-text transition-colors group"
@@ -135,6 +151,7 @@ export function Sidebar() {
               Suporte
             </span>
           </Link>
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-red-400 transition-colors group"
@@ -171,10 +188,28 @@ export function Sidebar() {
           );
         })}
 
+        {/* Toggle tema — mobile */}
+        <button
+          onClick={toggle}
+          aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
+          className="flex flex-col items-center gap-1 px-3 py-2 text-text-muted hover:text-text transition-colors"
+        >
+          <div className="p-2">
+            {isDark ? (
+              <SunIcon size={24} weight="duotone" className="text-amber-400" />
+            ) : (
+              <MoonIcon size={24} weight="duotone" />
+            )}
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider">
+            {isDark ? "Claro" : "Escuro"}
+          </span>
+        </button>
+
         {/* Botão de Sair no Mobile */}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 px-3 py-2 text-text-muted"
+          className="flex flex-col items-center gap-1 px-3 py-2 text-text-muted hover:text-red-400 transition-colors"
         >
           <div className="p-2">
             <SignOut size={24} weight="duotone" />

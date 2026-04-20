@@ -242,13 +242,13 @@ export default function MenuPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
+      <div className="min-h-screen bg-menu-bg flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#D2BBFF]" />
       </div>
     );
 
   return (
-    <main className="min-h-screen bg-[#131313] text-[#E5E2E1] font-sans relative pb-32 overflow-x-hidden">
+    <main className="min-h-screen bg-menu-bg text-menu-text font-sans relative pb-32 overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
       <MenuHeader tenant={tenant!} />
@@ -283,10 +283,10 @@ export default function MenuPage() {
       {isCartOpen && (
         <div className="fixed inset-0 z-60 flex justify-end">
           <div
-            className="absolute inset-0 bg-[#131313]/90 backdrop-blur-md"
+            className="absolute inset-0 bg-menu-bg/90 backdrop-blur-md"
             onClick={() => setIsCartOpen(false)}
           />
-          <div className="relative w-full max-w-md bg-[#1C1B1B] border-l border-[#4A4455]/30 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+          <div className="relative w-full max-w-md bg-menu-surface border-l border-menu-border/30 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
             <DrawerHeader
               step={step}
               setStep={setStep}

@@ -426,8 +426,6 @@ export default function MenuManagement() {
       <div className="bg-noise pointer-events-none" />
       <div className="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-accent/5 blur-[120px] rounded-full pointer-events-none" />
 
-      
-
       <section className="lg:ml-64 p-8 md:p-12 relative z-10">
         {/* Header */}
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -453,7 +451,7 @@ export default function MenuManagement() {
             </button>
             <button
               onClick={openCreateProduct}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
             >
               <Plus size={18} weight="bold" /> Novo Produto
             </button>
@@ -523,7 +521,7 @@ export default function MenuManagement() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`px-4 py-2 rounded-xl border font-bold text-xs transition-all flex items-center gap-1.5 ${
                     activeCategory === cat.id
-                      ? "bg-accent text-white border-accent"
+                      ? "bg-accent text-menu-text border-accent"
                       : "bg-surface border-border text-text-secondary hover:text-text"
                   }`}
                 >
@@ -654,7 +652,7 @@ export default function MenuManagement() {
             <div className="flex justify-end mb-6">
               <button
                 onClick={openCreateCategory}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
               >
                 <Plus size={16} weight="bold" /> Nova Categoria
               </button>
@@ -724,7 +722,7 @@ export default function MenuManagement() {
             <div className="flex justify-end mb-6">
               <button
                 onClick={openCreateAddon}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
               >
                 <Plus size={16} weight="bold" /> Novo Adicional
               </button>
@@ -977,7 +975,7 @@ export default function MenuManagement() {
                 <button
                   onClick={saveProduct}
                   disabled={savingProduct}
-                  className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all disabled:opacity-40"
+                  className="flex-1 py-3 rounded-xl bg-accent text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all disabled:opacity-40"
                 >
                   {savingProduct
                     ? "Salvando..."
@@ -1104,7 +1102,7 @@ export default function MenuManagement() {
                 </button>
                 <button
                   onClick={confirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all"
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all"
                 >
                   Excluir
                 </button>
@@ -1195,7 +1193,7 @@ function ModalActions({
       <button
         onClick={onConfirm}
         disabled={saving}
-        className="flex-1 py-3 rounded-xl bg-accent text-white font-bold text-sm hover:brightness-110 active:scale-95 transition-all disabled:opacity-40"
+        className="flex-1 py-3 rounded-xl bg-accent text-menu-text font-bold text-sm hover:brightness-110 active:scale-95 transition-all disabled:opacity-40"
       >
         {saving ? "Salvando..." : label}
       </button>

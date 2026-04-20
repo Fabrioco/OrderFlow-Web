@@ -21,9 +21,9 @@ export function ProductCard({
         handleProductClick(product);
       }}
       disabled={!tenant.is_open}
-      className="group text-left bg-[#1C1B1B] border border-[#4A4455]/20 rounded-4xl p-5 flex gap-5 hover:border-[#D2BBFF]/40 transition-all relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed"
+      className="group text-left bg-menu-surface border border-menu-border/20 rounded-4xl p-5 flex gap-5 hover:border-[#D2BBFF]/40 transition-all relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 bg-[#131313] flex items-center justify-center text-4xl shadow-inner">
+      <div className="w-28 h-28 rounded-2xl overflow-hidden shrink-0 bg-menu-bg flex items-center justify-center text-4xl shadow-inner">
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -37,12 +37,12 @@ export function ProductCard({
 
       <div className="flex flex-col justify-between py-1 flex-1 min-w-0">
         <div>
-          <h3 className="font-black text-white text-base uppercase tracking-tight italic group-hover:text-[#D2BBFF] transition-colors truncate">
+          <h3 className="font-black text-menu-text text-base uppercase tracking-tight italic group-hover:text-menu-accent transition-colors truncate">
             {product.name}
           </h3>
 
           <p
-            className={`text-xs text-[#CCC3D8] mt-1 leading-relaxed ${
+            className={`text-xs text-menu-text-secondary mt-1 leading-relaxed ${
               expanded ? "" : "line-clamp-2"
             }`}
           >
@@ -55,7 +55,7 @@ export function ProductCard({
                 e.stopPropagation(); // evita clicar no card
                 setExpanded((prev) => !prev);
               }}
-              className="text-xs text-[#D2BBFF] cursor-pointer mt-1 inline-block"
+              className="text-xs text-menu-accent cursor-pointer mt-1 inline-block"
             >
               {expanded ? "ver menos" : "ver mais"}
             </span>
@@ -63,14 +63,14 @@ export function ProductCard({
         </div>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="font-black text-[#D2BBFF] text-lg">
+          <span className="font-black text-menu-accent text-lg">
             {Number(product.price).toLocaleString("pt-BR", {
               style: "currency",
               currency: "BRL",
             })}
           </span>
 
-          <div className="w-9 h-9 rounded-full bg-[#D2BBFF]/10 text-[#D2BBFF] flex items-center justify-center group-hover:bg-[#D2BBFF] group-hover:text-[#25005A] transition-all">
+          <div className="w-9 h-9 rounded-full bg-menu-accent/10 text-menu-accent flex items-center justify-center group-hover:bg-menu-accent group-hover:text-menu-accent-on transition-all">
             <PlusIcon size={18} weight="bold" />
           </div>
         </div>

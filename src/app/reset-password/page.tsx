@@ -161,7 +161,7 @@ export default function ResetPassword() {
             <button
               disabled={loading}
               type="submit"
-              className="w-full py-4 rounded-xl font-bold bg-linear-to-r from-[#C084FC] to-accent text-white shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:scale-100"
+              className="w-full py-4 rounded-xl font-bold bg-linear-to-r from-[#C084FC] to-accent text-menu-text shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:hover:scale-100"
             >
               {loading ? (
                 <CircleNotchIcon

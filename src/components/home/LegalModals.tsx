@@ -483,7 +483,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
             </p>
             <button
               onClick={onClose}
-              className="mt-4 px-6 py-2.5 rounded-xl font-bold text-sm bg-accent text-white hover:brightness-110 transition-all"
+              className="mt-4 px-6 py-2.5 rounded-xl font-bold text-sm bg-accent text-menu-text hover:brightness-110 transition-all"
             >
               Fechar
             </button>
@@ -591,7 +591,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   !form.message ||
                   state === "loading"
                 }
-                className="w-full py-3.5 rounded-xl font-bold text-sm bg-accent text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl font-bold text-sm bg-accent text-menu-text hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2"
               >
                 {state === "loading" ? (
                   <>

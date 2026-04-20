@@ -28,7 +28,7 @@ export const STATUS_CONFIG: Record<
   out_for_delivery: {
     label: "Saiu para Entrega",
     icon: MopedFrontIcon,
-    color: "text-primary",
+    color: "text-menu-accent",
   },
   delivered: {
     label: "Entregue",
