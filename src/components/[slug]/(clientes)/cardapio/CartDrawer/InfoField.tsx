@@ -11,8 +11,8 @@ export function InfoField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-[10px] font-black text-[#CCC3D8] uppercase tracking-widest">
-        {icon && <span className="text-[#D2BBFF]/60">{icon}</span>}
+      <label className="flex items-center gap-1.5 text-[10px] font-black text-menu-text-secondary uppercase tracking-widest">
+        {icon && <span className="text-menu-accent/60">{icon}</span>}
         {label}
       </label>
       {children}

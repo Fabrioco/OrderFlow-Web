@@ -225,7 +225,7 @@ export default function UpgradePage() {
                 <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-accent/5 blur-[50px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                 {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-accent text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-accent text-menu-text text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
                     Mais popular
                   </div>
                 )}
@@ -354,7 +354,7 @@ export default function UpgradePage() {
                 <button
                   onClick={startCheckout}
                   className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 
-                ${current?.accentClass.replace("text", "bg")} text-[#25005A] hover:opacity-90 shadow-lg`}
+                ${current?.accentClass.replace("text", "bg")} text-menu-accent-on hover:opacity-90 shadow-lg`}
                 >
                   Ir para Pagamento
                 </button>

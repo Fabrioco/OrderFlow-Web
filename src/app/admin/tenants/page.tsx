@@ -156,7 +156,7 @@ export default function AdminTenantsPage() {
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">
               Total Ativo
             </p>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-menu-text">
               {stats.total.toString().padStart(2, "0")}
             </p>
           </div>
@@ -165,7 +165,7 @@ export default function AdminTenantsPage() {
             <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">
               MRR Estimado
             </p>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-3xl font-bold text-menu-text">
               {stats.mrr.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",

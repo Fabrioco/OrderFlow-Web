@@ -1,8 +1,9 @@
-"use client"
-
+"use client";
 import { House, Receipt, ClockClockwise } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/contexts/ThemeProvider";
 
 export function BottomNav({
   slug,
@@ -12,6 +13,8 @@ export function BottomNav({
   hasActiveOrder: boolean;
 }) {
   const pathname = usePathname();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === "dark";
 
   const tabs = [
     {
@@ -19,7 +22,7 @@ export function BottomNav({
       icon: (
         <House
           size={24}
-          weight={pathname === `/${slug}` ? "fill" : "regular"}
+          weight={pathname === `/${slug}/cardapio` ? "fill" : "regular"}
         />
       ),
       href: `/${slug}/cardapio`,
@@ -43,7 +46,6 @@ export function BottomNav({
     },
   ];
 
-  // Se houver um pedido ativo, adicionamos a aba de "Acompanhar"
   if (hasActiveOrder) {
     tabs.push({
       label: "Pedido Atual",
@@ -51,28 +53,28 @@ export function BottomNav({
         <ClockClockwise
           size={24}
           weight="fill"
-          className="animate-pulse text-[#D2BBFF]"
+          className="animate-pulse text-menu-accent"
         />
       ),
-      href: `/${slug}/meus-pedidos/atual`, // Ajuste para sua rota de status real
+      href: `/${slug}/meus-pedidos/atual`,
       active: pathname.includes("/status"),
     });
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-100 bg-[#1C1B1B]/80 backdrop-blur-2xl border-t border-[#4A4455]/30 px-6 pb-6 pt-3 flex justify-around items-center">
+    <nav className="fixed bottom-0 left-0 right-0 z-100 bg-menu-surface/80 backdrop-blur-2xl border-t border-menu-border/30 px-6 pb-6 pt-3 flex justify-around items-center">
       {tabs.map((tab) => (
         <Link
           key={tab.label}
           href={tab.href}
           className={`flex flex-col items-center gap-1 transition-all ${
             tab.active
-              ? "text-[#D2BBFF]"
-              : "text-[#CCC3D8]/60 hover:text-[#CCC3D8]"
+              ? "text-menu-accent"
+              : "text-menu-text-secondary/60 hover:text-menu-text-secondary"
           }`}
         >
           <div
-            className={`p-1 rounded-xl transition-all ${tab.active ? "bg-[#D2BBFF]/10" : ""}`}
+            className={`p-1 rounded-xl transition-all ${tab.active ? "bg-menu-accent/10" : ""}`}
           >
             {tab.icon}
           </div>
@@ -81,6 +83,24 @@ export function BottomNav({
           </span>
         </Link>
       ))}
+
+      {/* Toggle de tema */}
+      <button
+        onClick={toggle}
+        aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
+        className="flex flex-col items-center gap-1 transition-all text-menu-text-secondary/60 hover:text-menu-text-secondary"
+      >
+        <div className="p-1 rounded-xl transition-all">
+          {isDark ? (
+            <SunIcon size={24} weight="regular" className="text-amber-400" />
+          ) : (
+            <MoonIcon size={24} weight="regular" className="text-menu-accent" />
+          )}
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest">
+          {isDark ? "Claro" : "Escuro"}
+        </span>
+      </button>
     </nav>
   );
 }

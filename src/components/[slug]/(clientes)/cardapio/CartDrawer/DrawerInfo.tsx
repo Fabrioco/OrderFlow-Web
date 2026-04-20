@@ -12,8 +12,6 @@ import { DeliveryZone, Tenant } from "@/types/supabase";
 import { toast } from "sonner";
 import { CustomerForm } from "@/types/customerForm";
 
-
-
 type Payload = {
   token: string;
   payment_method_id: string;
@@ -142,7 +140,7 @@ export default function DrawerInfo({
 
         {/* Seletor de forma de pagamento */}
         <div>
-          <label className="block text-[10px] font-black text-[#CCC3D8] uppercase tracking-widest mb-2">
+          <label className="block text-[10px] font-black text-menu-text-secondary uppercase tracking-widest mb-2">
             Forma de pagamento
           </label>
           <div className="space-y-2">
@@ -157,15 +155,15 @@ export default function DrawerInfo({
                   }
                   className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left ${
                     form.payment_method === method
-                      ? "border-[#D2BBFF] bg-[#D2BBFF]/5 text-white"
-                      : "border-[#4A4455]/30 bg-[#131313]/50 text-[#CCC3D8] hover:border-[#D2BBFF]/30"
+                      ? "border-[#D2BBFF] bg-menu-accent/5 text-menu-text"
+                      : "border-menu-border/30 bg-menu-bg/50 text-menu-text-secondary hover:border-menu-accent/30"
                   }`}
                 >
                   <span
                     className={
                       form.payment_method === method
-                        ? "text-[#D2BBFF]"
-                        : "text-[#CCC3D8]"
+                        ? "text-menu-accent"
+                        : "text-menu-text-secondary"
                     }
                   >
                     {meta.icon}
@@ -175,7 +173,7 @@ export default function DrawerInfo({
                     <CheckCircleIcon
                       size={18}
                       weight="fill"
-                      className="text-[#D2BBFF] ml-auto"
+                      className="text-menu-accent ml-auto"
                     />
                   )}
                 </button>
@@ -189,10 +187,10 @@ export default function DrawerInfo({
                               o footer com "Confirmar Pedido" fica oculto nesse caso. */}
         {isCardPayment && mpReady && (
           <div className="mt-2">
-            <label className="block text-[10px] font-black text-[#CCC3D8] uppercase tracking-widest mb-3">
+            <label className="block text-[10px] font-black text-menu-text-secondary uppercase tracking-widest mb-3">
               Dados do cartão
             </label>
-            <div className="rounded-2xl overflow-hidden border border-[#4A4455]/30">
+            <div className="rounded-2xl overflow-hidden border border-menu-border/30">
               <CardPayment
                 initialization={{ amount: totalFinal }}
                 customization={{
@@ -247,8 +245,8 @@ export default function DrawerInfo({
       {/* Footer com resumo e botão — oculto quando cartão está selecionado
                             porque o brick já tem seu próprio botão de submit */}
       {!isCardPayment && (
-        <div className="p-6 bg-[#201F1F] border-t border-[#4A4455]/20 space-y-3 shrink-0">
-          <div className="flex justify-between text-sm text-[#CCC3D8]">
+        <div className="p-6 bg-menu-footer border-t border-menu-border/20 space-y-3 shrink-0">
+          <div className="flex justify-between text-sm text-menu-text-secondary">
             <span>Subtotal</span>
             <span>
               {cartTotal.toLocaleString("pt-BR", {
@@ -258,16 +256,16 @@ export default function DrawerInfo({
             </span>
           </div>
           {selectedZone && (
-            <div className="flex justify-between text-sm text-[#CCC3D8]">
+            <div className="flex justify-between text-sm text-menu-text-secondary">
               <span>Taxa de entrega</span>
               <span>R$ {deliveryFee.toFixed(2).replace(".", ",")}</span>
             </div>
           )}
-          <div className="flex justify-between items-center pt-1 border-t border-[#4A4455]/20">
-            <span className="text-[#CCC3D8] text-xs font-bold uppercase tracking-widest">
+          <div className="flex justify-between items-center pt-1 border-t border-menu-border/20">
+            <span className="text-menu-text-secondary text-xs font-bold uppercase tracking-widest">
               Total
             </span>
-            <span className="text-2xl font-black text-[#D2BBFF] tracking-tighter">
+            <span className="text-2xl font-black text-menu-accent tracking-tighter">
               {totalFinal.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
@@ -277,7 +275,7 @@ export default function DrawerInfo({
           <button
             onClick={() => handleCheckout()}
             disabled={processing}
-            className="w-full py-4 bg-[#D2BBFF] text-[#25005A] font-black rounded-2xl flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_30px_rgba(210,187,255,0.2)] disabled:opacity-50 mb-20"
+            className="w-full py-4 bg-menu-accent text-menu-accent-on font-black rounded-2xl flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-[0_10px_30px_rgba(210,187,255,0.2)] disabled:opacity-50 mb-20"
           >
             {processing ? (
               <div className="w-5 h-5 border-2 border-[#25005A]/30 border-t-[#25005A] rounded-full animate-spin" />

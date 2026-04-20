@@ -516,7 +516,7 @@ function OrderCard({
                 {hasNext ? (
                   <button
                     onClick={() => onUpdateStatus(order.id, order.status)}
-                    className="relative w-full py-3 rounded-2xl font-bold text-xs bg-accent text-white shadow-lg shadow-accent/20 hover:brightness-110 active:scale-95 overflow-hidden group/btn"
+                    className="relative w-full py-3 rounded-2xl font-bold text-xs bg-accent text-menu-text shadow-lg shadow-accent/20 hover:brightness-110 active:scale-95 overflow-hidden group/btn"
                   >
                     <span className="relative z-10">
                       {STATUS_ACTION[order.status]}
@@ -596,7 +596,7 @@ function OrderCard({
                 href={whatsapp}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg font-bold text-xs hover:scale-105 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#25D366] text-menu-text rounded-lg font-bold text-xs hover:scale-105 transition-all"
               >
                 <WhatsappLogo size={16} weight="fill" /> Abrir WhatsApp
               </a>
@@ -703,7 +703,7 @@ function OrderCard({
                   onUpdateStatus(order.id, order.status);
                   setShowDetails(false);
                 }}
-                className="w-full mt-8 py-3.5 rounded-2xl font-bold text-sm bg-accent text-white hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-accent/20"
+                className="w-full mt-8 py-3.5 rounded-2xl font-bold text-sm bg-accent text-menu-text hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-accent/20"
               >
                 {STATUS_ACTION[order.status]}
               </button>

@@ -8,7 +8,7 @@ export default function CustomizeModal({
   addons,
   selectedAddons,
   setSelectedAddons,
-  confirmAddToCart
+  confirmAddToCart,
 }: {
   customizingProduct: Product | null;
   setCustomizingProduct: (product: Product | null) => void;
@@ -23,13 +23,13 @@ export default function CustomizeModal({
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setCustomizingProduct(null)}
       />
-      <div className="relative w-full max-w-lg bg-[#1C1B1B] border border-[#4A4455]/30 rounded-[2.5rem] overflow-hidden flex flex-col max-h-[70vh]">
+      <div className="relative w-full max-w-lg bg-menu-surface border border-menu-border/30 rounded-[2.5rem] overflow-hidden flex flex-col max-h-[70vh]">
         {/* Header Modal */}
-        <div className="p-6 border-b border-[#4A4455]/20">
-          <h3 className="text-xl font-black text-white uppercase italic">
+        <div className="p-6 border-b border-menu-border/20">
+          <h3 className="text-xl font-black text-menu-text uppercase italic">
             {customizingProduct?.name}
           </h3>
-          <p className="text-xs text-[#CCC3D8] mt-1">
+          <p className="text-xs text-menu-text-secondary mt-1">
             Turbine seu pedido com adicionais:
           </p>
         </div>
@@ -50,15 +50,15 @@ export default function CustomizeModal({
                 }}
                 className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
                   isSelected
-                    ? "border-[#D2BBFF] bg-[#D2BBFF]/5"
-                    : "border-[#4A4455]/20 bg-[#131313]/50"
+                    ? "border-[#D2BBFF] bg-menu-accent/5"
+                    : "border-menu-border/20 bg-menu-bg/50"
                 }`}
               >
                 <div className="flex flex-col text-left">
-                  <span className="font-bold text-white text-sm">
+                  <span className="font-bold text-menu-text text-sm">
                     {addon.name}
                   </span>
-                  <span className="text-[#D2BBFF] text-xs font-black">
+                  <span className="text-menu-accent text-xs font-black">
                     +{" "}
                     {Number(addon.price).toLocaleString("pt-BR", {
                       style: "currency",
@@ -69,15 +69,15 @@ export default function CustomizeModal({
                 <div
                   className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                     isSelected
-                      ? "bg-[#D2BBFF] border-[#D2BBFF]"
-                      : "border-[#4A4455]"
+                      ? "bg-menu-accent border-[#D2BBFF]"
+                      : "border-menu-border"
                   }`}
                 >
                   {isSelected && (
                     <CheckCircleIcon
                       size={16}
                       weight="fill"
-                      className="text-[#25005A]"
+                      className="text-menu-accent-on"
                     />
                   )}
                 </div>
@@ -87,10 +87,10 @@ export default function CustomizeModal({
         </div>
 
         {/* Footer Modal */}
-        <div className="p-6 bg-[#201F1F] border-t border-[#4A4455]/20">
+        <div className="p-6 bg-menu-footer border-t border-menu-border/20">
           <button
             onClick={confirmAddToCart}
-            className="w-full py-4 bg-[#D2BBFF] text-[#25005A] font-black rounded-2xl flex items-center justify-center gap-3"
+            className="w-full py-4 bg-menu-accent text-menu-accent-on font-black rounded-2xl flex items-center justify-center gap-3"
           >
             Adicionar à sacola
             <span className="opacity-50 text-xs">•</span>

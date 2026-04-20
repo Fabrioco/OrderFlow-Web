@@ -57,7 +57,7 @@ export default function PrintPage() {
 
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-black text-white text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-black text-menu-text text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
         >
           <Printer size={16} weight="bold" />
           Imprimir

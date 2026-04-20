@@ -32,14 +32,18 @@ const STATUS_MAP: Record<
   out_for_delivery: {
     label: "Em Rota",
     icon: MopedFrontIcon,
-    color: "text-[#D2BBFF]",
+    color: "text-menu-accent",
   },
   delivered: {
     label: "Finalizado",
     icon: CheckCircleIcon,
     color: "text-green-400",
   },
-  cancelled: { label: "Cancelado", icon: CheckCircleIcon, color: "text-red-400" },
+  cancelled: {
+    label: "Cancelado",
+    icon: CheckCircleIcon,
+    color: "text-red-400",
+  },
 };
 
 /* ── OrdersHeader ────────────────────────────────────────────── */
@@ -51,11 +55,11 @@ interface OrdersHeaderProps {
 export function OrdersHeader({ slug }: OrdersHeaderProps) {
   const router = useRouter();
   return (
-    <nav className="sticky top-0 z-50 bg-[#131313]/80 backdrop-blur-md border-b border-[#353534] px-6 h-16 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-menu-bg/80 backdrop-blur-md border-b border-menu-border px-6 h-16 flex items-center justify-between">
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.push(`/${slug}/cardapio`)}
-          className="text-[#ccc3d8] hover:text-white transition-colors"
+          className="text-menu-text-secondary hover:text-menu-text transition-colors"
         >
           <CaretLeftIcon size={24} weight="bold" />
         </button>
@@ -63,7 +67,11 @@ export function OrdersHeader({ slug }: OrdersHeaderProps) {
           Histórico de Pedidos
         </h1>
       </div>
-      <ReceiptIcon size={24} weight="duotone" className="text-primary opacity-50" />
+      <ReceiptIcon
+        size={24}
+        weight="duotone"
+        className="text-menu-accent opacity-50"
+      />
     </nav>
   );
 }
@@ -84,17 +92,17 @@ export function OrderCard({ order, slug }: OrderCardProps) {
   return (
     <button
       onClick={() => router.push(`/${slug}/meus-pedidos/${order.id}`)}
-      className="w-full bg-[#0e0e0e] rounded-4xl p-6 border border-[#353534] hover:border-[#D2BBFF]/30 transition-all text-left flex flex-col group relative overflow-hidden"
+      className="w-full bg-menu-surface-deep rounded-4xl p-6 border border-menu-border hover:border-menu-accent/30 transition-all text-left flex flex-col group relative overflow-hidden"
     >
       {/* Status + valor */}
       <div className="flex justify-between items-start mb-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-[#D2BBFF] uppercase tracking-[0.2em]">
+            <span className="text-[10px] font-black text-menu-accent uppercase tracking-[0.2em]">
               #{order.order_number}
             </span>
-            <span className="text-[10px] text-[#353534]">•</span>
-            <span className="text-[10px] text-[#ccc3d8] font-bold uppercase tracking-widest">
+            <span className="text-[10px] text-menu-border">•</span>
+            <span className="text-[10px] text-menu-text-secondary font-bold uppercase tracking-widest">
               {format(new Date(order.created_at), "dd MMM, HH:mm", {
                 locale: ptBR,
               })}
@@ -107,7 +115,7 @@ export function OrderCard({ order, slug }: OrderCardProps) {
             </span>
           </div>
         </div>
-        <span className="text-xl font-black text-white tracking-tighter italic">
+        <span className="text-xl font-black text-menu-text tracking-tighter italic">
           {order.total.toLocaleString("pt-BR", {
             style: "currency",
             currency: "BRL",
@@ -116,11 +124,11 @@ export function OrderCard({ order, slug }: OrderCardProps) {
       </div>
 
       {/* Itens */}
-      <div className="space-y-2 border-t border-[#353534]/50 pt-4">
+      <div className="space-y-2 border-t border-menu-border/50 pt-4">
         {order.order_items.map((item: any, i: number) => (
           <div key={i} className="flex justify-between items-center text-xs">
-            <span className="text-[#ccc3d8] font-medium">
-              <strong className="text-white font-black">
+            <span className="text-menu-text-secondary font-medium">
+              <strong className="text-menu-text font-black">
                 {item.quantity}x
               </strong>{" "}
               {item.product_name}
@@ -130,7 +138,7 @@ export function OrderCard({ order, slug }: OrderCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="mt-5 flex items-center justify-end text-[10px] font-black uppercase tracking-[0.2em] text-[#D2BBFF] group-hover:gap-3 transition-all gap-2">
+      <div className="mt-5 flex items-center justify-end text-[10px] font-black uppercase tracking-[0.2em] text-menu-accent group-hover:gap-3 transition-all gap-2">
         Acompanhar Pedido
         <ArrowRightIcon size={14} weight="bold" />
       </div>
@@ -148,20 +156,24 @@ export function OrdersEmptyState({ slug }: OrdersEmptyStateProps) {
   const router = useRouter();
   return (
     <div className="text-center py-32 space-y-6">
-      <div className="size-20 bg-[#1c1b1b] rounded-3xl flex items-center justify-center mx-auto border border-[#353534]">
-        <ShoppingBagIcon size={32} weight="duotone" className="text-[#353534]" />
+      <div className="size-20 bg-menu-surface rounded-3xl flex items-center justify-center mx-auto border border-menu-border">
+        <ShoppingBagIcon
+          size={32}
+          weight="duotone"
+          className="text-menu-border"
+        />
       </div>
       <div>
-        <p className="text-white font-bold uppercase italic tracking-tight">
+        <p className="text-menu-text font-bold uppercase italic tracking-tight">
           Nenhum pedido encontrado
         </p>
-        <p className="text-[#ccc3d8] text-xs mt-1">
+        <p className="text-menu-text-secondary text-xs mt-1">
           Seus pedidos aparecerão aqui assim que você finalizar uma compra.
         </p>
       </div>
       <button
         onClick={() => router.push(`/${slug}`)}
-        className="px-8 py-3 bg-[#D2BBFF] text-[#25005A] font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all"
+        className="px-8 py-3 bg-menu-accent text-menu-accent-on font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all"
       >
         Fazer meu primeiro pedido
       </button>

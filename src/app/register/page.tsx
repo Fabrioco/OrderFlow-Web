@@ -45,12 +45,12 @@ export default function Register() {
 
       return data; // <- isso aqui é o tipo correto
     };
-    
+
     toast.promise(promise(), {
       loading: "Criando sua conta...",
       success: (data) => {
         setLoading(false);
-        router.replace("/settings-profile")
+        router.replace("/settings-profile");
         return `Bem-vindo, ${data.user?.user_metadata.full_name}!`;
       },
       error: (err) => {
@@ -169,7 +169,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 mt-2 rounded-xl font-bold text-sm bg-linear-to-r from-[#C084FC] to-accent text-white hover:brightness-110 shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 mt-2 rounded-xl font-bold text-sm bg-linear-to-r from-[#C084FC] to-accent text-menu-text hover:brightness-110 shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Criando..." : "Crie minha lanchonete agora"}
               {!loading && (

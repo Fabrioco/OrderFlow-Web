@@ -29,7 +29,6 @@ const NAV_ITEMS = [
     icon: CurrencyDollarIcon,
     shortLabel: "Revenue",
   },
-
 ];
 
 export function AdminSidebar() {
@@ -48,13 +47,13 @@ export function AdminSidebar() {
   return (
     <>
       {/* --- DESKTOP SIDEBAR (Lateral) --- */}
-      <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] flex-col py-8 px-4 z-50 border-r border-border">
+      <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-menu-surface flex-col py-8 px-4 z-50 border-r border-border">
         <div className="flex items-center gap-3 px-2 mb-10">
           <div className="w-8 h-8 rounded-xl bg-linear-to-br from-[#C084FC] to-accent flex items-center justify-center shrink-0">
-            <span className="text-[#25005A] font-black text-xs">OF</span>
+            <span className="text-menu-accent-on font-black text-xs">OF</span>
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tighter text-white leading-none">
+            <h1 className="text-base font-bold tracking-tighter text-menu-text leading-none">
               OrderFlow
             </h1>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-0.5">
@@ -72,8 +71,8 @@ export function AdminSidebar() {
                 href={href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-[#2A2A2A] text-white"
-                    : "text-text-muted hover:text-white hover:bg-[#2A2A2A]/50"
+                    ? "bg-[#2A2A2A] text-menu-text"
+                    : "text-text-muted hover:text-menu-text hover:bg-[#2A2A2A]/50"
                 }`}
               >
                 <Icon
@@ -95,7 +94,7 @@ export function AdminSidebar() {
       </aside>
 
       {/* --- MOBILE NAV (Bottom Bar) --- */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1C1B1B]/80 backdrop-blur-lg border-t border-white/5 px-4 pb-6 pt-3">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-menu-surface/80 backdrop-blur-lg border-t border-white/5 px-4 pb-6 pt-3">
         <div className="flex items-center justify-around max-w-md mx-auto">
           {NAV_ITEMS.map(({ href, shortLabel, icon: Icon }) => {
             const active = pathname === href;
@@ -112,7 +111,7 @@ export function AdminSidebar() {
                   className={`w-6 h-6 ${active ? "text-accent scale-110" : "text-text-muted"}`}
                 />
                 <span
-                  className={`text-[10px] font-bold uppercase ${active ? "text-white" : "text-text-muted"}`}
+                  className={`text-[10px] font-bold uppercase ${active ? "text-menu-text" : "text-text-muted"}`}
                 >
                   {shortLabel}
                 </span>

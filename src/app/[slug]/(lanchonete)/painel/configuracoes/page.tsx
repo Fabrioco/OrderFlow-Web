@@ -322,7 +322,7 @@ export default function SettingsPage() {
           <button
             onClick={handleUpdateProfile}
             disabled={isUpdating}
-            className="px-8 py-3 rounded-2xl bg-accent text-white text-sm font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-accent/20"
+            className="px-8 py-3 rounded-2xl bg-accent text-menu-text text-sm font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-accent/20"
           >
             {isUpdating ? "Salvando..." : "Salvar Todas as Alterações"}
           </button>
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                         <ImageIcon size={40} className="text-text-muted" />
                       )}
                     </div>
-                    <label className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-all">
+                    <label className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-accent text-menu-text flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-all">
                       <CameraIcon size={20} />
                       <input
                         type="file"
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                           onClick={() => handleTogglePaymentMethod(method)}
                           className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
                             formData.payment_methods.includes(method)
-                              ? "bg-accent border-accent text-white"
+                              ? "bg-accent border-accent text-menu-text"
                               : "bg-bg border-border text-text-muted hover:border-accent/50"
                           }`}
                         >
@@ -614,7 +614,7 @@ export default function SettingsPage() {
                 className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   settings?.mp_access_token
                     ? "bg-surface-alt border border-border text-text-muted cursor-default"
-                    : "bg-accent text-white hover:brightness-110"
+                    : "bg-accent text-menu-text hover:brightness-110"
                 }`}
               >
                 {settings?.mp_access_token

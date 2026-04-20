@@ -1,13 +1,13 @@
 "use client";
 
-import {  useRouter, useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 export default function UpgradeFailurePage() {
-//   const params = useSearchParams();
+  //   const params = useSearchParams();
   const router = useRouter();
   const { slug } = useParams<{ slug: string }>();
 
-//   const status = params.get("status");
+  //   const status = params.get("status");
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-bg text-text">
@@ -22,7 +22,7 @@ export default function UpgradeFailurePage() {
 
         <button
           onClick={() => router.push(`/${slug}/upgrade`)}
-          className="mt-4 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-bold"
+          className="mt-4 px-4 py-2 rounded-xl bg-red-500 text-menu-text text-sm font-bold"
         >
           Tentar novamente
         </button>
