@@ -8,6 +8,7 @@ import {
   UserSwitchIcon,
   MoonIcon,
   SunIcon,
+  BookOpenIcon
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -38,6 +39,11 @@ export function Sidebar() {
       icon: CookingPot,
       label: "Cardápio",
       path: `/${slug}/painel/cardapio`,
+    },
+    {
+      icon: BookOpenIcon,
+      label: "Histórico",
+      path: `/${slug}/painel/historico`,
     },
     {
       icon: Gear,
