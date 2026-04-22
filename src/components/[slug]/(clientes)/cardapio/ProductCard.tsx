@@ -70,7 +70,13 @@ export function ProductCard({
             })}
           </span>
 
-          <div className="w-9 h-9 rounded-full bg-menu-accent/10 text-menu-accent flex items-center justify-center group-hover:bg-menu-accent group-hover:text-menu-accent-on transition-all">
+          <div
+            style={{
+              backgroundColor: `${tenant.primary_color}`,
+              color: `${tenant.button_text_color}`,
+            }}
+            className={`w-9 h-9 rounded-full  text-menu-accent flex items-center justify-center group-hover:brightness-110 transition-all`}
+          >
             <PlusIcon size={18} weight="bold" />
           </div>
         </div>
