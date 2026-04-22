@@ -8,7 +8,7 @@ import {
   UserSwitchIcon,
   MoonIcon,
   SunIcon,
-  BookOpenIcon
+  BookOpenIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -17,7 +17,13 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/contexts/ThemeProvider";
 
-export function Sidebar() {
+export function Sidebar({
+  tenantName,
+  tenantLogoUrl,
+}: {
+  tenantName: string;
+  tenantLogoUrl: string | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -101,8 +107,27 @@ export function Sidebar() {
     <>
       {/* ── DESKTOP SIDEBAR (lg+) ── */}
       <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-surface border-r border-border p-6 lg:flex z-40">
-        <div className="mb-10 text-xl font-bold tracking-tighter text-accent uppercase">
-          OrderFlow
+        <div className="mb-10 text-xl font-bold tracking-tighter text-accent flex flex-col">
+          <span>The Order Flow</span>
+          {/* <span className="text-sm">Flow</span> */}
+        </div>
+
+        <div className="flex items-center gap-2 mb-6">
+          {tenantLogoUrl ? (
+            <img
+              src={tenantLogoUrl}
+              alt={tenantName}
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+          ) : (
+            <div
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+              style={{ backgroundColor: "var(--color-primary)" }}
+            >
+              {tenantName[0]?.toUpperCase()}
+            </div>
+          )}
+          <span className="font-semibold text-gray-900">{tenantName}</span>
         </div>
 
         <nav className="flex-1 space-y-2">

@@ -15,52 +15,33 @@ import {
   Wallet,
   QrCode,
   CheckCircle,
-  ChairIcon,
-  UserPlusIcon,
-  TrashIcon,
-  UserIcon,
-  PlusIcon,
-  TableIcon,
+  PaintBrushIcon,
+  InstagramLogoIcon,
+  WhatsappLogoIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-/* ── Types ───────────────────────────────────────────────────── */
-
-type Table = {
-  id: string;
-  number: number;
-  label: string | null;
-  status: string;
-};
-
-type Garcom = {
-  id: string;
-  user_id: string;
-  role: string;
-  created_at: string;
-  email?: string;
-};
-
 /* ── Component ───────────────────────────────────────────────── */
-
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
   const pathname = usePathname();
   const slug = pathname.split("/")[1];
-
   const { settings } = useTenantSettings(slug);
-
   const [isUpdating, setIsUpdating] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
     logo_url: "",
+    banner_url: "",
+    primary_color: "#f97316",
+    button_text_color: "#ffffff",
+    instagram_url: "",
+    whatsapp_url: "",
     phone: "",
     address: "",
     city: "",
@@ -70,38 +51,6 @@ export default function SettingsPage() {
     payment_methods: ["cash", "pix"],
   });
 
-  // ── Mesas ──
-  const [tables, setTables] = useState<Table[]>([]);
-  const [newTableLabel, setNewTableLabel] = useState("");
-  const [loadingTables, setLoadingTables] = useState(false);
-
-  // ── Garçons ──
-  const [garcons, setGarcons] = useState<Garcom[]>([]);
-  const [newGarcomEmail, setNewGarcomEmail] = useState("");
-  const [loadingGarcons, setLoadingGarcons] = useState(false);
-
-  /* ── Fetch mesas ── */
-  const fetchTables = async () => {
-    if (!settings?.id) return;
-    const { data } = await supabase
-      .from("tables")
-      .select("*")
-      .eq("tenant_id", settings.id)
-      .order("number");
-    setTables((data as Table[]) ?? []);
-  };
-
-  /* ── Fetch garçons ── */
-  const fetchGarcons = async () => {
-    if (!settings?.id) return;
-    const { data } = await supabase
-      .from("tenant_users")
-      .select("id, user_id, role, created_at")
-      .eq("tenant_id", settings.id)
-      .eq("role", "garcom");
-    setGarcons((data as Garcom[]) ?? []);
-  };
-
   useEffect(() => {
     if (settings) {
       setFormData({
@@ -109,6 +58,11 @@ export default function SettingsPage() {
         slug: settings.slug || "",
         description: settings.description || "",
         logo_url: settings.logo_url || "",
+        banner_url: (settings as any).banner_url || "",
+        primary_color: (settings as any).primary_color || "#f97316",
+        button_text_color: (settings as any).button_text_color || "#ffffff",
+        instagram_url: (settings as any).instagram_url || "",
+        whatsapp_url: (settings as any).whatsapp_url || "",
         phone: settings.phone || "",
         address: settings.address || "",
         city: settings.city || "",
@@ -117,91 +71,10 @@ export default function SettingsPage() {
         pix_key_type: settings.pix_key_type || "",
         payment_methods: settings.payment_methods || ["cash", "pix"],
       });
-      fetchTables();
-      fetchGarcons();
     }
   }, [settings]);
 
-  /* ── Adicionar mesa ── */
-  async function handleAddTable() {
-    if (!settings?.id) return;
-    setLoadingTables(true);
-
-    const nextNumber =
-      tables.length > 0 ? Math.max(...tables.map((t) => t.number)) + 1 : 1;
-
-    const label = newTableLabel.trim() || `Mesa ${nextNumber}`;
-
-    const { error } = await supabase.from("tables").insert({
-      tenant_id: settings.id,
-      number: nextNumber,
-      label,
-    });
-
-    if (error) {
-      toast.error("Erro ao adicionar mesa.");
-    } else {
-      toast.success(`${label} adicionada!`);
-      setNewTableLabel("");
-      await fetchTables();
-    }
-    setLoadingTables(false);
-  }
-
-  /* ── Remover mesa ── */
-  async function handleRemoveTable(tableId: string, label: string) {
-    const { error } = await supabase.from("tables").delete().eq("id", tableId);
-
-    if (error) {
-      toast.error("Erro ao remover mesa.");
-    } else {
-      toast.success(`${label} removida.`);
-      await fetchTables();
-    }
-  }
-
-  /* ── Adicionar garçom ── */
-  async function handleAddGarcom() {
-    if (!newGarcomEmail.trim() || !settings?.id) return;
-    setLoadingGarcons(true);
-
-    // Busca o user pelo email via função RPC ou auth.users
-    // Como não temos acesso direto ao auth.users no client,
-    // usamos uma API route para isso
-    const res = await fetch("/api/admin/invite-garcom", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: newGarcomEmail.trim(),
-        tenantId: settings.id,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      toast.error(data.error || "Erro ao adicionar garçom.");
-    } else {
-      toast.success("Garçom adicionado!");
-      setNewGarcomEmail("");
-      await fetchGarcons();
-    }
-    setLoadingGarcons(false);
-  }
-
-  /* ── Remover garçom ── */
-  async function handleRemoveGarcom(id: string) {
-    const { error } = await supabase.from("tenant_users").delete().eq("id", id);
-
-    if (error) {
-      toast.error("Erro ao remover garçom.");
-    } else {
-      toast.success("Garçom removido.");
-      await fetchGarcons();
-    }
-  }
-
-  /* ── Handlers existentes ── */
+  /* ── Salvar tudo ── */
   const handleUpdateProfile = async () => {
     setIsUpdating(true);
     const { error } = await supabase
@@ -217,6 +90,11 @@ export default function SettingsPage() {
         pix_key: formData.pix_key,
         pix_key_type: formData.pix_key_type,
         payment_methods: formData.payment_methods,
+        primary_color: formData.primary_color,
+        banner_url: formData.banner_url,
+        button_text_color: formData.button_text_color,
+        instagram_url: formData.instagram_url || null,
+        whatsapp_url: formData.whatsapp_url || null,
       })
       .eq("id", settings.id);
 
@@ -242,6 +120,7 @@ export default function SettingsPage() {
     }));
   };
 
+  /* ── Upload logo ── */
   const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !settings?.id) return;
@@ -273,6 +152,36 @@ export default function SettingsPage() {
     );
   };
 
+  /* ── Upload banner ── */
+  const handleUploadBanner = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !settings?.id) return;
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${settings.id}/banner-${Date.now()}.${fileExt}`;
+    toast.promise(
+      async () => {
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, { cacheControl: "3600", upsert: true });
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        const { error: updateError } = await supabase
+          .from("tenants")
+          .update({ banner_url: publicUrl })
+          .eq("id", settings.id);
+        if (updateError) throw updateError;
+        setFormData((prev) => ({ ...prev, banner_url: publicUrl }));
+      },
+      {
+        loading: "Enviando banner...",
+        success: "Banner atualizado!",
+        error: (err) => `Erro: ${err.message}`,
+      },
+    );
+  };
+
   const handleCopyLink = () => {
     const fullUrl = `${window.location.origin}/${formData.slug}/cardapio`;
     navigator.clipboard.writeText(fullUrl);
@@ -282,14 +191,11 @@ export default function SettingsPage() {
   const handleToggleOpen = async () => {
     const newValue = !formData.is_open;
     setFormData((prev) => ({ ...prev, is_open: newValue }));
-
     const { error } = await supabase
       .from("tenants")
       .update({ is_open: newValue })
       .eq("id", settings.id);
-
     if (error) {
-      // reverte se falhar
       setFormData((prev) => ({ ...prev, is_open: !newValue }));
       toast.error("Erro ao atualizar status da loja.");
     } else {
@@ -307,7 +213,6 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative pb-20">
       <div className="bg-noise pointer-events-none" />
-
       <section className="lg:ml-64 p-8 md:p-12 relative z-10 max-w-7xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
@@ -366,6 +271,7 @@ export default function SettingsPage() {
                     </label>
                   </div>
                 </div>
+
                 <div className="w-full max-w-2xl mx-auto space-y-6">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase text-text-muted ml-1">
@@ -429,7 +335,291 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── SEÇÃO 2: LOCALIZAÇÃO ── */}
+            {/* ── SEÇÃO 2: APARÊNCIA ── */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                <PaintBrushIcon
+                  size={20}
+                  className="text-accent"
+                  weight="duotone"
+                />
+                <h2 className="font-bold">Aparência do Cardápio</h2>
+              </div>
+              <div className="p-8 space-y-8">
+                {/* Cores lado a lado */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Cor principal */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                      Cor Principal
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={formData.primary_color}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            primary_color: e.target.value,
+                          })
+                        }
+                        className="w-12 h-12 rounded-xl border border-border cursor-pointer bg-bg p-1 shrink-0"
+                      />
+                      <span className="font-mono text-xs text-text-muted">
+                        {formData.primary_color}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        "#f97316",
+                        "#ef4444",
+                        "#8b5cf6",
+                        "#3b82f6",
+                        "#22c55e",
+                        "#ec4899",
+                        "#f59e0b",
+                        "#1c1a17",
+                      ].map((c) => (
+                        <button
+                          key={c}
+                          onClick={() =>
+                            setFormData({ ...formData, primary_color: c })
+                          }
+                          className="w-7 h-7 rounded-lg border-2 transition-all hover:scale-110"
+                          style={{
+                            backgroundColor: c,
+                            borderColor:
+                              formData.primary_color === c
+                                ? "#1a1814"
+                                : "transparent",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cor do texto dos botões */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                      Cor do Texto dos Botões
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={formData.button_text_color}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            button_text_color: e.target.value,
+                          })
+                        }
+                        className="w-12 h-12 rounded-xl border border-border cursor-pointer bg-bg p-1 shrink-0"
+                      />
+                      <span className="font-mono text-xs text-text-muted">
+                        {formData.button_text_color}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      {["#ffffff", "#000000", "#1a1814", "#f8f7f4"].map((c) => (
+                        <button
+                          key={c}
+                          onClick={() =>
+                            setFormData({ ...formData, button_text_color: c })
+                          }
+                          className="w-7 h-7 rounded-lg border-2 transition-all hover:scale-110"
+                          style={{
+                            backgroundColor: c,
+                            borderColor:
+                              formData.button_text_color === c
+                                ? "#6366f1"
+                                : "#e8e5e0",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prévia ao vivo */}
+                <div className="p-4 rounded-2xl bg-bg border border-border flex flex-wrap items-center gap-4">
+                  <span className="text-[10px] font-black uppercase text-text-muted tracking-widest">
+                    Prévia
+                  </span>
+                  <button
+                    className="px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm"
+                    style={{
+                      backgroundColor: formData.primary_color,
+                      color: formData.button_text_color,
+                    }}
+                  >
+                    Adicionar ao carrinho
+                  </button>
+                  <button
+                    className="px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm"
+                    style={{
+                      backgroundColor: formData.primary_color,
+                      color: formData.button_text_color,
+                    }}
+                  >
+                    Confirmar pedido
+                  </button>
+                </div>
+
+                {/* Banner */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase text-text-muted ml-1">
+                    Banner do Cardápio{" "}
+                    <span className="normal-case font-normal text-text-muted">
+                      — recomendado 1200×400px
+                    </span>
+                  </label>
+                  <label className="relative block cursor-pointer group">
+                    <div className="w-full h-36 rounded-2xl overflow-hidden border-2 border-dashed border-border group-hover:border-accent/50 transition-all bg-bg flex items-center justify-center">
+                      {formData.banner_url ? (
+                        <>
+                          <Image
+                            src={formData.banner_url}
+                            alt="Banner"
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">
+                              Trocar banner
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-text-muted">
+                          <ImageIcon size={32} />
+                          <span className="text-xs font-bold">
+                            Clique para enviar o banner
+                          </span>
+                          <span className="text-[10px]">
+                            PNG, JPG ou WEBP • Máx. 5MB
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleUploadBanner}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* ── SEÇÃO 3: REDES SOCIAIS ── */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                <InstagramLogoIcon
+                  size={20}
+                  className="text-accent"
+                  weight="duotone"
+                />
+                <h2 className="font-bold">Redes Sociais</h2>
+              </div>
+              <div className="p-8 space-y-5">
+                <p className="text-xs text-text-muted">
+                  Os links aparecem no rodapé do cardápio online para os
+                  clientes.
+                </p>
+
+                {/* Instagram */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-text-muted flex items-center gap-2 ml-1">
+                    <InstagramLogoIcon size={12} /> Instagram
+                  </label>
+                  <div className="flex items-center bg-bg border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors">
+                    <span className="px-4 py-3 text-sm text-text-muted font-bold border-r border-border bg-surface-alt/30 whitespace-nowrap">
+                      instagram.com/
+                    </span>
+                    <input
+                      value={formData.instagram_url}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          instagram_url: e.target.value,
+                        })
+                      }
+                      placeholder="sualanchonete"
+                      className="flex-1 px-4 py-3 text-sm bg-transparent outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-text-muted flex items-center gap-2 ml-1">
+                    <WhatsappLogoIcon size={12} /> WhatsApp
+                  </label>
+                  <div className="flex items-center bg-bg border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors">
+                    <span className="px-4 py-3 text-sm text-text-muted font-bold border-r border-border bg-surface-alt/30 whitespace-nowrap">
+                      +55
+                    </span>
+                    <input
+                      value={formData.whatsapp_url}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          whatsapp_url: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                      placeholder="19999999999"
+                      maxLength={11}
+                      className="flex-1 px-4 py-3 text-sm bg-transparent outline-none"
+                    />
+                  </div>
+                  <p className="text-[10px] text-text-muted ml-1">
+                    Só números, com DDD. Ex: 19999999999
+                  </p>
+                </div>
+
+                {/* Prévia dos links */}
+                {(formData.instagram_url || formData.whatsapp_url) && (
+                  <div className="mt-2 p-4 rounded-2xl bg-bg border border-border">
+                    <p className="text-[10px] font-black uppercase text-text-muted mb-3 tracking-widest">
+                      Prévia no cardápio
+                    </p>
+                    <div className="flex gap-3 flex-wrap">
+                      {formData.instagram_url && (
+                        <a
+                          href={`https://instagram.com/${formData.instagram_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-surface text-sm font-bold hover:border-accent/50 transition-colors"
+                        >
+                          <InstagramLogoIcon
+                            size={16}
+                            className="text-pink-500"
+                          />
+                          @{formData.instagram_url}
+                        </a>
+                      )}
+                      {formData.whatsapp_url && (
+                        <a
+                          href={`https://wa.me/55${formData.whatsapp_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-surface text-sm font-bold hover:border-accent/50 transition-colors"
+                        >
+                          <WhatsappLogoIcon
+                            size={16}
+                            className="text-green-500"
+                          />
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── SEÇÃO 4: LOCALIZAÇÃO ── */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
                 <MapPin size={20} className="text-accent" weight="duotone" />
@@ -476,7 +666,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── SEÇÃO 3: PAGAMENTOS ── */}
+            {/* ── SEÇÃO 5: PAGAMENTOS ── */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
                 <Wallet size={20} className="text-accent" weight="duotone" />
@@ -511,6 +701,7 @@ export default function SettingsPage() {
                     )}
                   </div>
                 </div>
+
                 {formData.payment_methods.includes("pix") && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl bg-bg border border-border border-dashed">
                     <div className="space-y-1">
@@ -562,20 +753,28 @@ export default function SettingsPage() {
                     size={18}
                     className="text-secondary"
                     weight="duotone"
-                  />{" "}
+                  />
                   Status de Operação
                 </div>
                 <button
                   onClick={handleToggleOpen}
-                  className={`relative w-12 h-6 rounded-full transition-all ${formData.is_open ? "bg-green-500" : "bg-border"}`}
+                  className={`relative w-12 h-6 rounded-full transition-all ${
+                    formData.is_open ? "bg-green-500" : "bg-border"
+                  }`}
                 >
                   <div
-                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.is_open ? "left-7" : "left-1"}`}
+                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${
+                      formData.is_open ? "left-7" : "left-1"
+                    }`}
                   />
                 </button>
               </div>
               <div
-                className={`p-4 rounded-2xl text-center border ${formData.is_open ? "bg-green-500/10 border-green-500/20 text-green-600" : "bg-red-500/10 border-red-500/20 text-red-400"}`}
+                className={`p-4 rounded-2xl text-center border ${
+                  formData.is_open
+                    ? "bg-green-500/10 border-green-500/20 text-green-600"
+                    : "bg-red-500/10 border-red-500/20 text-red-400"
+                }`}
               >
                 <p className="text-xs font-black uppercase tracking-widest">
                   {formData.is_open ? "Loja Aberta" : "Loja Fechada"}
@@ -586,7 +785,11 @@ export default function SettingsPage() {
             <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm relative overflow-hidden">
               <div className="flex items-start justify-between mb-4">
                 <div
-                  className={`p-3 rounded-2xl ${settings?.mp_access_token ? "bg-green-500/10 text-green-500" : "bg-accent/10 text-accent"}`}
+                  className={`p-3 rounded-2xl ${
+                    settings?.mp_access_token
+                      ? "bg-green-500/10 text-green-500"
+                      : "bg-accent/10 text-accent"
+                  }`}
                 >
                   <CreditCard size={24} weight="duotone" />
                 </div>
