@@ -7,7 +7,6 @@ import { initMercadoPago } from "@mercadopago/sdk-react";
 import { toast } from "sonner";
 
 // Componentes
-import { MenuHeader } from "@/components/[slug]/(clientes)/cardapio/MenuHeader";
 import { CategoryNav } from "@/components/[slug]/(clientes)/cardapio/CategoryNav";
 import { ProductGrid } from "@/components/[slug]/(clientes)/cardapio/ProductGrid";
 import { CartSummary } from "@/components/[slug]/(clientes)/cardapio/CartSummary";
@@ -20,6 +19,7 @@ import CustomizeModal from "@/components/[slug]/(clientes)/cardapio/CustomizeMod
 import { useCart } from "@/hooks/useCart";
 import { CustomerForm } from "@/types/customerForm";
 import { Addon, DeliveryZone, Product, Step, Tenant } from "@/types/supabase";
+import { TenantHero } from "@/components/[slug]/(clientes)/cardapio/TenantHero";
 
 const BLANK_FORM: CustomerForm = {
   name: "",
@@ -75,7 +75,7 @@ export default function MenuPage() {
         const { data: tenantData, error: tErr } = await supabase
           .from("tenants")
           .select(
-            "id, name, slug, is_open, description, logo_url, payment_methods, pix_key, pix_key_type, mp_public_key",
+            "id, name, slug, is_open, description, logo_url, payment_methods, pix_key, pix_key_type, mp_public_key, banner_url, primary_color, button_text_color, instagram_url, whatsapp_url",
           )
           .eq("slug", slug)
           .single();
@@ -251,7 +251,15 @@ export default function MenuPage() {
     <main className="min-h-screen bg-menu-bg text-menu-text font-sans relative pb-32 overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-      <MenuHeader tenant={tenant!} />
+      {/* <MenuHeader tenant={tenant!} /> */}
+      <TenantHero
+        name={tenant?.name}
+        logoUrl={tenant?.logo_url}
+        bannerUrl={tenant?.banner_url}
+        primaryColor={tenant?.primary_color}
+        instagram_url={tenant?.instagram_url}
+        whatsapp_url={tenant?.whatsapp_url}
+      />
 
       <CategoryNav
         categories={categories}

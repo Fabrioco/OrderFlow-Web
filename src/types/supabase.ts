@@ -26,6 +26,11 @@ export interface Tenant {
   name: string;
   description: string | null;
   logo_url: string | null;
+  primary_color: string | null;
+  banner_url: string | null;
+  button_text_color: string | null;
+  instagram_url: string | null;
+  whatsapp_url: string | null;
   phone: string | null;
   address: string | null;
   city: string | null;

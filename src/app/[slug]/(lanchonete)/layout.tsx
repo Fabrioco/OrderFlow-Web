@@ -1,40 +1,34 @@
-"use client";
-import { TrialBanner } from "@/components/[slug]/(lanchonete)/PlanGate";
-import { Sidebar } from "@/components/Sidebar";
-import { usePlan } from "@/hooks/usePlan";
-import React from "react";
+import { LanchoneteClient } from "@/components/[slug]/(lanchonete)/LanchoneteClient";
+import { createClient } from "@/utils/supabase/client";
 
-export default function LanchoneteLayout({
+export default async function LanchoneteLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
   params: Promise<{ slug: string }>;
 }) {
-  // ❗ precisa resolver a Promise
-  const [slug, setSlug] = React.useState<string | null>(null);
+  const { slug } = await params;
+  const supabase = createClient();
 
-  React.useEffect(() => {
-    params.then((p) => setSlug(p.slug));
-  }, [params]);
+  const { data: tenant } = await supabase
+    .from("tenants_public")
+    .select("primary_color, name, logo_url")
+    .eq("slug", slug)
+    .single();
 
-  const { trialDaysLeft, isTrialExpired, isBlocked } = usePlan(slug ?? "");
-
-  if (!slug) return null;
+  const primaryColor = tenant?.primary_color ?? "#f97316";
+  const tenantName = tenant?.name ?? "";
+  const tenantLogoUrl = tenant?.logo_url ?? null;
 
   return (
-    <>
-      <Sidebar />
-
-      <div className="fixed top-0 right-0 z-60">
-        <TrialBanner
-          trialDaysLeft={trialDaysLeft}
-          isTrialExpired={isTrialExpired}
-          isBlocked={isBlocked}
-        />
-      </div>
-
-      <main className="pt-15 pb-24">{children}</main>
-    </>
+    <LanchoneteClient
+      slug={slug}
+      primaryColor={primaryColor}
+      tenantName={tenantName}
+      tenantLogoUrl={tenantLogoUrl}
+    >
+      {children}
+    </LanchoneteClient>
   );
 }
