@@ -20,6 +20,7 @@ import {
   TableIcon,
   PlusIcon,
   TrashIcon,
+  Motorcycle,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -34,6 +35,14 @@ type Table = {
   is_active: boolean;
 };
 
+type DeliveryZone = {
+  id: string;
+  tenant_id: string;
+  neighborhood: string;
+  fee: string;
+  created_at: string;
+};
+
 /* ── Component ───────────────────────────────────────────────── */
 export default function SettingsPage() {
   const router = useRouter();
@@ -45,6 +54,12 @@ export default function SettingsPage() {
   const [tables, setTables] = useState<Table[]>([]);
   const [newTableLabel, setNewTableLabel] = useState("");
   const [loadingTables, setLoadingTables] = useState(false);
+
+  /* ── Delivery zones state ── */
+  const [zones, setZones] = useState<DeliveryZone[]>([]);
+  const [loadingZones, setLoadingZones] = useState(false);
+  const [newNeighborhood, setNewNeighborhood] = useState("");
+  const [newFee, setNewFee] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -85,8 +100,9 @@ export default function SettingsPage() {
         pix_key_type: settings.pix_key_type || "",
         payment_methods: settings.payment_methods || ["cash", "pix"],
       });
+      fetchTables();
+      fetchZones(settings.id);
     }
-    fetchTables();
   }, [settings]);
 
   const fetchTables = async () => {
@@ -98,6 +114,78 @@ export default function SettingsPage() {
       .order("number");
     setTables((data as Table[]) ?? []);
   };
+
+  /* ── Buscar zonas de entrega ── */
+  const fetchZones = async (tenantId: string) => {
+    const { data } = await supabase
+      .from("delivery_zones")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("neighborhood");
+    setZones((data as DeliveryZone[]) ?? []);
+  };
+
+  /* ── Adicionar zona ── */
+  const handleAddZone = async () => {
+    if (!settings?.id) return;
+    const neighborhood = newNeighborhood.trim();
+    const fee = parseFloat(newFee.replace(",", "."));
+
+    if (!neighborhood) {
+      toast.error("Informe o nome do bairro.");
+      return;
+    }
+    if (isNaN(fee) || fee < 0) {
+      toast.error("Informe um valor de frete válido.");
+      return;
+    }
+    const alreadyExists = zones.some(
+      (z) => z.neighborhood.toLowerCase() === neighborhood.toLowerCase(),
+    );
+    if (alreadyExists) {
+      toast.error("Esse bairro já está cadastrado.");
+      return;
+    }
+
+    setLoadingZones(true);
+    const { error } = await supabase.from("delivery_zones").insert({
+      tenant_id: settings.id,
+      neighborhood,
+      fee: fee.toFixed(2),
+    });
+
+    if (error) {
+      toast.error("Erro ao adicionar bairro.");
+    } else {
+      toast.success(`${neighborhood} adicionado!`);
+      setNewNeighborhood("");
+      setNewFee("");
+      await fetchZones(settings.id);
+    }
+    setLoadingZones(false);
+  };
+
+  /* ── Remover zona ── */
+  const handleDeleteZone = async (zone: DeliveryZone) => {
+    if (!settings?.id) return;
+    const { error } = await supabase
+      .from("delivery_zones")
+      .delete()
+      .eq("id", zone.id);
+
+    if (error) {
+      toast.error("Erro ao remover bairro.");
+    } else {
+      toast.success(`${zone.neighborhood} removido.`);
+      await fetchZones(settings.id);
+    }
+  };
+
+  const formatFee = (fee: string) =>
+    parseFloat(fee).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
 
   /* ── Salvar tudo ── */
   const handleUpdateProfile = async () => {
@@ -232,7 +320,6 @@ export default function SettingsPage() {
     if (!settings?.id) return;
     setLoadingTables(true);
 
-    // 🔹 BUSCAR TODAS as mesas (ativas + inativas)
     const { data, error: fetchError } = await supabase
       .from("tables")
       .select("number")
@@ -245,10 +332,7 @@ export default function SettingsPage() {
       return;
     }
 
-    // 🔹 Encontrar números já usados
     const usedNumbers = (data ?? []).map((t) => t.number);
-
-    // 🔹 Encontrar o menor número livre
     let nextNumber = 1;
     while (usedNumbers.includes(nextNumber)) {
       nextNumber++;
@@ -256,7 +340,6 @@ export default function SettingsPage() {
 
     const label = newTableLabel.trim() || `Mesa ${nextNumber}`;
 
-    // 🔹 Inserir nova mesa
     const { error } = await supabase.from("tables").insert({
       tenant_id: settings.id,
       number: nextNumber,
@@ -274,7 +357,7 @@ export default function SettingsPage() {
 
     setLoadingTables(false);
   }
-  /* ── Remover mesa ── */
+
   async function handleToggleTable(table: Table) {
     if (table.status !== "free") {
       toast.error("Mesa não está livre.");
@@ -302,6 +385,7 @@ export default function SettingsPage() {
 
     await fetchTables();
   }
+
   if (!settings)
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -445,9 +529,7 @@ export default function SettingsPage() {
                 <h2 className="font-bold">Aparência do Cardápio</h2>
               </div>
               <div className="p-8 space-y-8">
-                {/* Cores lado a lado */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Cor principal */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase text-text-muted ml-1">
                       Cor Principal
@@ -497,7 +579,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Cor do texto dos botões */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase text-text-muted ml-1">
                       Cor do Texto dos Botões
@@ -539,7 +620,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Prévia ao vivo */}
                 <div className="p-4 rounded-2xl bg-bg border border-border flex flex-wrap items-center gap-4">
                   <span className="text-[10px] font-black uppercase text-text-muted tracking-widest">
                     Prévia
@@ -564,7 +644,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
 
-                {/* Banner */}
                 <div className="space-y-3">
                   <label className="text-[10px] font-black uppercase text-text-muted ml-1">
                     Banner do Cardápio{" "}
@@ -627,7 +706,6 @@ export default function SettingsPage() {
                   clientes.
                 </p>
 
-                {/* Instagram */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-text-muted flex items-center gap-2 ml-1">
                     <InstagramLogoIcon size={12} /> Instagram
@@ -650,7 +728,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* WhatsApp */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase text-text-muted flex items-center gap-2 ml-1">
                     <WhatsappLogoIcon size={12} /> WhatsApp
@@ -677,7 +754,6 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
-                {/* Prévia dos links */}
                 {(formData.instagram_url || formData.whatsapp_url) && (
                   <div className="mt-2 p-4 rounded-2xl bg-bg border border-border">
                     <p className="text-[10px] font-black uppercase text-text-muted mb-3 tracking-widest">
@@ -772,7 +848,6 @@ export default function SettingsPage() {
                 <h2 className="font-bold">Mesas do PDV</h2>
               </div>
               <div className="p-8 space-y-6">
-                {/* Input para adicionar */}
                 <div className="flex gap-3">
                   <input
                     value={newTableLabel}
@@ -791,7 +866,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
 
-                {/* Lista de mesas */}
                 {tables.length === 0 ? (
                   <div className="py-10 border border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-text-muted gap-2">
                     <TableIcon size={32} weight="thin" className="opacity-30" />
@@ -801,7 +875,6 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {tables.map((table) => {
                       const isInactive = !table.is_active;
-
                       return (
                         <div
                           key={table.id}
@@ -811,19 +884,14 @@ export default function SettingsPage() {
                               : "border-border bg-bg hover:border-white/20"
                           }`}
                         >
-                          {/* Ícone */}
                           <TableIcon
                             size={22}
                             weight="duotone"
                             className="text-text-muted"
                           />
-
-                          {/* Nome */}
                           <span className="text-sm font-bold text-text text-center">
                             {table.label ?? `Mesa ${table.number}`}
                           </span>
-
-                          {/* Status */}
                           <span
                             className={`text-[10px] font-black uppercase tracking-widest ${
                               isInactive
@@ -843,8 +911,6 @@ export default function SettingsPage() {
                                   ? "Ocupada"
                                   : "Conta pedida"}
                           </span>
-
-                          {/* Botão toggle */}
                           {table.status === "free" && (
                             <button
                               onClick={() => handleToggleTable(table)}
@@ -863,7 +929,7 @@ export default function SettingsPage() {
                           )}
                         </div>
                       );
-                    })}{" "}
+                    })}
                   </div>
                 )}
 
@@ -874,7 +940,127 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── SEÇÃO 6: PAGAMENTOS ── */}
+            {/* ── SEÇÃO 6: ZONAS DE ENTREGA ── */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                <Motorcycle
+                  size={20}
+                  className="text-accent"
+                  weight="duotone"
+                />
+                <h2 className="font-bold">Zonas de Entrega</h2>
+                {zones.length > 0 && (
+                  <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-text-muted">
+                    {zones.length} {zones.length === 1 ? "bairro" : "bairros"}
+                  </span>
+                )}
+              </div>
+              <div className="p-8 space-y-6">
+                {/* Formulário de adição */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <MapPin
+                      size={15}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
+                    />
+                    <input
+                      value={newNeighborhood}
+                      onChange={(e) => setNewNeighborhood(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddZone()}
+                      placeholder="Nome do bairro ou zona"
+                      className="w-full bg-bg border border-border rounded-xl pl-10 pr-4 py-3 text-sm focus:border-accent outline-none placeholder:text-text-muted"
+                    />
+                  </div>
+                  <div className="relative w-full sm:w-36">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm pointer-events-none select-none">
+                      R$
+                    </span>
+                    <input
+                      value={newFee}
+                      onChange={(e) =>
+                        setNewFee(e.target.value.replace(/[^0-9,.]/g, ""))
+                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleAddZone()}
+                      placeholder="0,00"
+                      className="w-full bg-bg border border-border rounded-xl pl-10 pr-4 py-3 text-sm focus:border-accent outline-none placeholder:text-text-muted"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddZone}
+                    disabled={loadingZones}
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent text-white text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shrink-0"
+                  >
+                    <PlusIcon size={14} weight="bold" />
+                    Adicionar
+                  </button>
+                </div>
+
+                {/* Lista de zonas */}
+                {zones.length === 0 ? (
+                  <div className="py-10 border border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-text-muted gap-2">
+                    <Motorcycle
+                      size={32}
+                      weight="thin"
+                      className="opacity-30"
+                    />
+                    <p className="text-sm">
+                      Nenhuma zona de entrega cadastrada ainda.
+                    </p>
+                    <p className="text-[11px] opacity-60">
+                      Adicione os bairros que você atende acima.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-border overflow-hidden">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-5 py-3 bg-surface-alt/30 border-b border-border">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                        Bairro / Zona
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted text-right">
+                        Frete
+                      </span>
+                      <span className="w-8" />
+                    </div>
+                    <div className="divide-y divide-border">
+                      {zones.map((zone) => (
+                        <div
+                          key={zone.id}
+                          className="grid grid-cols-[1fr_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-surface-alt/20 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MapPin
+                              size={14}
+                              className="text-text-muted shrink-0"
+                              weight="duotone"
+                            />
+                            <span className="text-sm font-medium text-text truncate">
+                              {zone.neighborhood}
+                            </span>
+                          </div>
+                          <span className="text-sm font-bold text-accent tabular-nums text-right whitespace-nowrap">
+                            {formatFee(zone.fee)}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteZone(zone)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
+                            title="Remover bairro"
+                          >
+                            <TrashIcon size={13} weight="bold" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-text-muted">
+                  O valor do frete é exibido para o cliente no momento do
+                  pedido, de acordo com o bairro informado.
+                </p>
+              </div>
+            </div>
+
+            {/* ── SEÇÃO 7: PAGAMENTOS ── */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
                 <Wallet size={20} className="text-accent" weight="duotone" />
@@ -886,25 +1072,23 @@ export default function SettingsPage() {
                     Métodos Aceitos
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    {["cash", "pix", "card_on_delivery"].map(
-                      (method) => (
-                        <button
-                          key={method}
-                          onClick={() => handleTogglePaymentMethod(method)}
-                          className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
-                            formData.payment_methods.includes(method)
-                              ? "bg-accent border-accent text-menu-text"
-                              : "bg-bg border-border text-text-muted hover:border-accent/50"
-                          }`}
-                        >
-                          {method === "cash"
-                            ? "Dinheiro"
-                            : method === "pix"
-                              ? "PIX Manual"
-                              : "Cartão na Entrega"}
-                        </button>
-                      ),
-                    )}
+                    {["cash", "pix", "card_on_delivery"].map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => handleTogglePaymentMethod(method)}
+                        className={`px-5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                          formData.payment_methods.includes(method)
+                            ? "bg-accent border-accent text-menu-text"
+                            : "bg-bg border-border text-text-muted hover:border-accent/50"
+                        }`}
+                      >
+                        {method === "cash"
+                          ? "Dinheiro"
+                          : method === "pix"
+                            ? "PIX Manual"
+                            : "Cartão na Entrega"}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -987,7 +1171,6 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
