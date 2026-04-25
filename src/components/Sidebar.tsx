@@ -93,6 +93,8 @@ export function Sidebar({
     loadUserRole();
   }, [supabase]);
 
+  const mobileMenuItems = menuItems.filter((item) => item.path !== "/admin");
+
   async function handleLogout() {
     toast.promise(
       async () => {
@@ -200,10 +202,9 @@ export function Sidebar({
           </button>
         </div>
       </aside>
-
       {/* ── MOBILE BOTTOM TAB BAR (sm/md) ── */}
       <nav className="fixed bottom-0 left-0 right-0 h-20 bg-surface/80 backdrop-blur-xl border-t border-border flex items-center justify-around px-4 lg:hidden z-[100] pb-safe">
-        {menuItems.map((item) => {
+        {mobileMenuItems.map((item) => {
           const isActive = pathname === item.path;
           return (
             <Link
@@ -224,38 +225,7 @@ export function Sidebar({
             </Link>
           );
         })}
-
-        {/* Toggle tema — mobile */}
-        <button
-          onClick={toggle}
-          aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
-          className="flex flex-col items-center gap-1 px-3 py-2 text-text-muted hover:text-text transition-colors"
-        >
-          <div className="p-2">
-            {isDark ? (
-              <SunIcon size={24} weight="duotone" className="text-amber-400" />
-            ) : (
-              <MoonIcon size={24} weight="duotone" />
-            )}
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider">
-            {isDark ? "Claro" : "Escuro"}
-          </span>
-        </button>
-
-        {/* Botão de Sair no Mobile */}
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-1 px-3 py-2 text-text-muted hover:text-red-400 transition-colors"
-        >
-          <div className="p-2">
-            <SignOut size={24} weight="duotone" />
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider">
-            Sair
-          </span>
-        </button>
-      </nav>
+      </nav>{" "}
     </>
   );
 }
