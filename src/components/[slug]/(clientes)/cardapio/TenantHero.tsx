@@ -39,7 +39,7 @@ export function TenantHero({
       {/* Conteúdo */}
       <div className="relative px-4 md:px-8 pb-4">
         {/* Header (logo + nome) */}
-        <div className="flex items-end gap-3 -mt-12 md:-mt-16">
+        <div className="flex flex-col gap-3 -mt-12 md:-mt-16">
           {logoUrl && (
             <img
               src={logoUrl}
@@ -48,7 +48,7 @@ export function TenantHero({
             />
           )}
 
-          <h1 className="text-lg md:text-2xl font-bold text-white leading-tight">
+          <h1 className="text-lg md:text-2xl font-bold text-color-menu-text leading-tight">
             {name}
           </h1>
         </div>

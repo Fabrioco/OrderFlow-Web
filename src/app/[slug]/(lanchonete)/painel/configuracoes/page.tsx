@@ -18,11 +18,22 @@ import {
   PaintBrushIcon,
   InstagramLogoIcon,
   WhatsappLogoIcon,
+  TableIcon,
+  PlusIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+type Table = {
+  id: string;
+  number: number;
+  label: string | null;
+  status: string;
+  is_active: boolean;
+};
 
 /* ── Component ───────────────────────────────────────────────── */
 export default function SettingsPage() {
@@ -32,6 +43,10 @@ export default function SettingsPage() {
   const slug = pathname.split("/")[1];
   const { settings } = useTenantSettings(slug);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [newTableLabel, setNewTableLabel] = useState("");
+  const [loadingTables, setLoadingTables] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -72,7 +87,18 @@ export default function SettingsPage() {
         payment_methods: settings.payment_methods || ["cash", "pix"],
       });
     }
+    fetchTables();
   }, [settings]);
+
+  const fetchTables = async () => {
+    if (!settings?.id) return;
+    const { data } = await supabase
+      .from("tables")
+      .select("*")
+      .eq("tenant_id", settings.id)
+      .order("number");
+    setTables((data as Table[]) ?? []);
+  };
 
   /* ── Salvar tudo ── */
   const handleUpdateProfile = async () => {
@@ -203,6 +229,80 @@ export default function SettingsPage() {
     }
   };
 
+  async function handleAddTable() {
+    if (!settings?.id) return;
+    setLoadingTables(true);
+
+    // 🔹 BUSCAR TODAS as mesas (ativas + inativas)
+    const { data, error: fetchError } = await supabase
+      .from("tables")
+      .select("number")
+      .eq("tenant_id", settings.id);
+
+    if (fetchError) {
+      console.log(fetchError);
+      toast.error("Erro ao calcular número da mesa.");
+      setLoadingTables(false);
+      return;
+    }
+
+    // 🔹 Encontrar números já usados
+    const usedNumbers = (data ?? []).map((t) => t.number);
+
+    // 🔹 Encontrar o menor número livre
+    let nextNumber = 1;
+    while (usedNumbers.includes(nextNumber)) {
+      nextNumber++;
+    }
+
+    const label = newTableLabel.trim() || `Mesa ${nextNumber}`;
+
+    // 🔹 Inserir nova mesa
+    const { error } = await supabase.from("tables").insert({
+      tenant_id: settings.id,
+      number: nextNumber,
+      label,
+    });
+
+    if (error) {
+      console.log(error);
+      toast.error("Erro ao adicionar mesa.");
+    } else {
+      toast.success(`${label} adicionada!`);
+      setNewTableLabel("");
+      await fetchTables();
+    }
+
+    setLoadingTables(false);
+  }
+  /* ── Remover mesa ── */
+  async function handleToggleTable(table: Table) {
+    if (table.status !== "free") {
+      toast.error("Mesa não está livre.");
+      return;
+    }
+
+    const newState = !table.is_active;
+
+    const { error } = await supabase
+      .from("tables")
+      .update({ is_active: newState })
+      .eq("id", table.id);
+
+    if (error) {
+      console.log(error);
+      toast.error("Erro ao atualizar mesa.");
+      return;
+    }
+
+    toast.success(
+      newState
+        ? `${table.label ?? `Mesa ${table.number}`} ativada.`
+        : `${table.label ?? `Mesa ${table.number}`} desativada.`,
+    );
+
+    await fetchTables();
+  }
   if (!settings)
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -666,7 +766,116 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* ── SEÇÃO 5: PAGAMENTOS ── */}
+            {/* ── SEÇÃO 5: MESAS ── */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                <TableIcon size={20} className="text-accent" weight="duotone" />
+                <h2 className="font-bold">Mesas do PDV</h2>
+              </div>
+              <div className="p-8 space-y-6">
+                {/* Input para adicionar */}
+                <div className="flex gap-3">
+                  <input
+                    value={newTableLabel}
+                    onChange={(e) => setNewTableLabel(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
+                    placeholder="Ex: Mesa 1, Varanda A, Balcão... (ou deixe vazio para numerar automaticamente)"
+                    className="flex-1 bg-bg border border-border rounded-xl px-4 py-3 text-sm focus:border-accent outline-none placeholder:text-text-muted"
+                  />
+                  <button
+                    onClick={handleAddTable}
+                    disabled={loadingTables}
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-accent text-white text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shrink-0"
+                  >
+                    <PlusIcon size={14} weight="bold" />
+                    Adicionar
+                  </button>
+                </div>
+
+                {/* Lista de mesas */}
+                {tables.length === 0 ? (
+                  <div className="py-10 border border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-text-muted gap-2">
+                    <TableIcon size={32} weight="thin" className="opacity-30" />
+                    <p className="text-sm">Nenhuma mesa cadastrada ainda.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {tables.map((table) => {
+                      const isInactive = !table.is_active;
+
+                      return (
+                        <div
+                          key={table.id}
+                          className={`group relative flex flex-col items-center justify-center gap-1 p-4 rounded-2xl border transition-all ${
+                            isInactive
+                              ? "border-border bg-bg opacity-40"
+                              : "border-border bg-bg hover:border-white/20"
+                          }`}
+                        >
+                          {/* Ícone */}
+                          <TableIcon
+                            size={22}
+                            weight="duotone"
+                            className="text-text-muted"
+                          />
+
+                          {/* Nome */}
+                          <span className="text-sm font-bold text-text text-center">
+                            {table.label ?? `Mesa ${table.number}`}
+                          </span>
+
+                          {/* Status */}
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest ${
+                              isInactive
+                                ? "text-gray-400"
+                                : table.status === "free"
+                                  ? "text-emerald-400"
+                                  : table.status === "occupied"
+                                    ? "text-accent"
+                                    : "text-amber-400"
+                            }`}
+                          >
+                            {isInactive
+                              ? "Desativada"
+                              : table.status === "free"
+                                ? "Livre"
+                                : table.status === "occupied"
+                                  ? "Ocupada"
+                                  : "Conta pedida"}
+                          </span>
+
+                          {/* Botão toggle */}
+                          {table.status === "free" && (
+                            <button
+                              onClick={() => handleToggleTable(table)}
+                              className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                                isInactive
+                                  ? "bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20"
+                                  : "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
+                              }`}
+                            >
+                              {isInactive ? (
+                                <CheckCircle size={10} weight="bold" />
+                              ) : (
+                                <TrashIcon size={10} weight="bold" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}{" "}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-text-muted">
+                  Mesas ocupadas não podem ser removidas. Feche a comanda
+                  primeiro.
+                </p>
+              </div>
+            </div>
+
+            {/* ── SEÇÃO 6: PAGAMENTOS ── */}
             <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
                 <Wallet size={20} className="text-accent" weight="duotone" />

@@ -9,6 +9,7 @@ import {
   MoonIcon,
   SunIcon,
   BookOpenIcon,
+  CashRegisterIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -50,6 +51,11 @@ export function Sidebar({
       icon: BookOpenIcon,
       label: "Histórico",
       path: `/${slug}/painel/historico`,
+    },
+    {
+      icon: CashRegisterIcon,
+      label: "Comanda",
+      path: `/${slug}/painel/pdv`,
     },
     {
       icon: Gear,
