@@ -53,6 +53,9 @@ export default function MenuPage() {
   const [processing, setProcessing] = useState(false);
   const [mpReady, setMpReady] = useState(false);
 
+  const [savedCustomer, setSavedCustomer] = useState<CustomerForm | null>(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+
   // Estado de Customização (Modal)
   const [customizingProduct, setCustomizingProduct] = useState<Product | null>(
     null,
@@ -68,6 +71,17 @@ export default function MenuPage() {
   } = useCart();
 
   /* ── Fetch Inicial ── */
+
+  useEffect(() => {
+    const saved = localStorage.getItem("customer_data");
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setSavedCustomer(parsed);
+      setShowCustomerModal(true);
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -151,6 +165,21 @@ export default function MenuPage() {
     }
   }
 
+  function handleReuseData() {
+    if (!savedCustomer) return;
+
+    setForm((prev) => ({
+      ...prev,
+      ...savedCustomer,
+    }));
+
+    setShowCustomerModal(false);
+  }
+
+  function handleIgnoreData() {
+    setShowCustomerModal(false);
+  }
+
   function confirmAddToCart() {
     if (!customizingProduct) return;
     addToCart(customizingProduct, selectedAddons);
@@ -220,6 +249,17 @@ export default function MenuPage() {
         throw new Error(json.error?.message || "Erro ao processar pedido");
 
       toast.success("Pedido realizado!");
+      localStorage.setItem(
+        "customer_data",
+        JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          street: form.street,
+          number: form.number,
+          complement: form.complement,
+          neighborhood: form.neighborhood,
+        }),
+      );
       router.push(`/${slug}/meus-pedidos/${json.orderId}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -265,6 +305,8 @@ export default function MenuPage() {
         categories={categories}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
+        primary_color={tenant?.primary_color ?? "#f97316"}
+        button_text_color={tenant?.button_text_color ?? "#f97316"}
       />
 
       <section className="px-6 md:px-16 mt-10 max-w-7xl mx-auto">
@@ -285,6 +327,8 @@ export default function MenuPage() {
           cartCount={cart.length}
           cartTotal={cartTotal}
           openCart={() => setIsCartOpen(true)}
+          primary_color={tenant?.primary_color ?? "#f97316"}
+          button_text_color={tenant?.button_text_color ?? "#f97316"}
         />
       )}
 
@@ -308,6 +352,8 @@ export default function MenuPage() {
                 addToCart={(p) => addToCart(p, [])}
                 removeFromCart={removeFromCart}
                 setStep={setStep}
+                primary_color={tenant?.primary_color ?? "#f97316"}
+                button_text_color={tenant?.button_text_color ?? "#f97316"}
               />
             ) : (
               <DrawerInfo
@@ -337,7 +383,49 @@ export default function MenuPage() {
           selectedAddons={selectedAddons}
           setCustomizingProduct={setCustomizingProduct}
           setSelectedAddons={setSelectedAddons}
+          button_text_color={tenant?.button_text_color ?? "#f97316"}
+          primary_color={tenant?.primary_color ?? "#f97316"}
         />
+      )}
+
+      {showCustomerModal && savedCustomer && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center">
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div className="relative z-10 w-[90%] max-w-md bg-menu-surface border border-menu-border rounded-2xl p-6 shadow-2xl">
+            <p className="text-sm text-menu-muted mb-2">
+              Olá, <b>{savedCustomer.name}</b>
+            </p>
+
+            <h2 className="text-lg font-bold mb-4">Esses são seus dados?</h2>
+
+            <div className="text-sm text-menu-text space-y-1 mb-6">
+              <p>
+                {savedCustomer.street}, {savedCustomer.number}
+              </p>
+              <p>{savedCustomer.neighborhood}</p>
+              <p>{savedCustomer.phone}</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleIgnoreData}
+                className="flex-1 py-3 rounded-xl border border-menu-border text-menu-muted font-bold hover:text-menu-text transition"
+              >
+                Não
+              </button>
+
+              <button
+                onClick={handleReuseData}
+                className="flex-1 py-3 rounded-xl bg-accent text-white font-bold hover:brightness-110 transition"
+              >
+                Sim, usar dados
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

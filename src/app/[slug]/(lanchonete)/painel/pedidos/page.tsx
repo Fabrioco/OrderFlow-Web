@@ -11,9 +11,12 @@ import {
   Bell,
   BellSlash,
   PrinterIcon,
+  WifiHigh,
+  WifiSlash,
+  WifiLow,
 } from "@phosphor-icons/react";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
@@ -31,6 +34,13 @@ type OrderStatus =
   | "out_for_delivery"
   | "delivered"
   | "cancelled";
+
+type ConnectionStatus =
+  | "connecting"
+  | "live"
+  | "reconnecting"
+  | "polling"
+  | "failed";
 
 /* ── Status helpers ──────────────────────────────────────────── */
 
@@ -66,6 +76,13 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   cancelled: "bg-red-500/10    text-red-400    border-red-500/20",
 };
 
+/* ── Constantes de reconexão ─────────────────────────────────── */
+
+const MAX_RETRIES = 6; // máximo de tentativas de reconexão
+const BASE_DELAY_MS = 1_000; // delay inicial: 1s
+const MAX_DELAY_MS = 32_000; // cap do backoff: 32s
+const POLLING_INTERVAL_MS = 30_000; // intervalo de polling de fallback
+
 /* ── Component ───────────────────────────────────────────────── */
 
 export default function Dashboard() {
@@ -80,55 +97,92 @@ export default function Dashboard() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connStatus, setConnStatus] = useState<ConnectionStatus>("connecting");
 
   const tenantId = tenant?.id ?? null;
+
+  // Refs para controlar reconexão sem re-render desnecessário
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const isMountedRef = useRef(true);
 
   /* ── Fetch ── */
   const fetchOrders = useCallback(async () => {
     if (!tenantId) return;
     try {
       const todayStart = startOfDay(new Date()).toISOString();
-
       const { data, error } = await supabase
         .from("orders")
         .select(
           `
-  *,
-  customers(name, phone),
-  order_items(*),
-  bills (
-    table_id,
-    tables (
-      number,
-      label
-    )
-  )
-`,
+          *,
+          customers(name, phone),
+          order_items(*),
+          bills (
+            table_id,
+            tables (
+              number,
+              label
+            )
+          )
+        `,
         )
         .eq("tenant_id", tenantId)
         .gte("created_at", todayStart)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders((data as Order[]) ?? []);
+      if (isMountedRef.current) {
+        setOrders((data as Order[]) ?? []);
+      }
     } catch (err) {
       console.error("Erro ao buscar pedidos:", err);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   }, [tenantId, supabase]);
 
-  /* ── Busca inicial ── */
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  /* ── Polling de fallback ── */
+  function startPolling() {
+    if (pollingTimerRef.current) return; // já está rodando
+    pollingTimerRef.current = setInterval(() => {
+      fetchOrders();
+    }, POLLING_INTERVAL_MS);
+  }
 
-  /* ── Realtime ── */
-  useEffect(() => {
-    if (!tenantId) return;
+  function stopPolling() {
+    if (pollingTimerRef.current) {
+      clearInterval(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
+  }
+
+  /* ── Limpar canal atual ── */
+  function removeChannel() {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+  }
+
+  /* ── Calcular delay com backoff exponencial + jitter ── */
+  function getRetryDelay(attempt: number): number {
+    const exp = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
+    // jitter aleatório de ±20% para evitar thundering herd
+    const jitter = exp * 0.2 * (Math.random() * 2 - 1);
+    return Math.round(exp + jitter);
+  }
+
+  /* ── Criar e inscrever canal ── */
+  const subscribeRealtime = useCallback(() => {
+    if (!tenantId || !isMountedRef.current) return;
+
+    removeChannel();
 
     const channel = supabase
-      .channel(`realtime:orders:${tenantId}`)
+      .channel(`realtime:orders:${tenantId}:${Date.now()}`)
       .on(
         "postgres_changes",
         {
@@ -138,18 +192,97 @@ export default function Dashboard() {
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          playSound(); // o hook já verifica internamente se está enabled
+          playSound();
           fetchOrders();
         },
       )
-      .subscribe((status) => {
-        console.log("Status do canal:", status);
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          fetchOrders();
+        },
+      )
+      .subscribe((status, err) => {
+        if (!isMountedRef.current) return;
+
+        if (status === "SUBSCRIBED") {
+          // Conexão estabelecida com sucesso
+          retryCountRef.current = 0;
+          setConnStatus("live");
+          stopPolling(); // para o polling de fallback se estava rodando
+          console.log("[Realtime] Conectado com sucesso.");
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || err) {
+          console.warn(`[Realtime] Problema: ${status}`, err);
+
+          const attempt = retryCountRef.current;
+
+          if (attempt >= MAX_RETRIES) {
+            // Esgotou tentativas → cai para polling
+            setConnStatus("failed");
+            startPolling();
+            toast.error(
+              "Conexão em tempo real indisponível. Atualizando a cada 30s.",
+              { id: "realtime-failed", duration: Infinity },
+            );
+            console.error(
+              "[Realtime] Máximo de tentativas atingido. Polling ativo.",
+            );
+            return;
+          }
+
+          const delay = getRetryDelay(attempt);
+          retryCountRef.current += 1;
+          setConnStatus("reconnecting");
+
+          console.log(
+            `[Realtime] Tentativa ${attempt + 1}/${MAX_RETRIES} em ${delay}ms...`,
+          );
+
+          retryTimerRef.current = setTimeout(() => {
+            if (isMountedRef.current) subscribeRealtime();
+          }, delay);
+        }
+
+        if (status === "CLOSED") {
+          // Canal fechado inesperadamente — trata igual ao erro
+          if (retryCountRef.current < MAX_RETRIES) {
+            const delay = getRetryDelay(retryCountRef.current);
+            retryCountRef.current += 1;
+            setConnStatus("reconnecting");
+            retryTimerRef.current = setTimeout(() => {
+              if (isMountedRef.current) subscribeRealtime();
+            }, delay);
+          }
+        }
       });
 
+    channelRef.current = channel;
+  }, [tenantId, fetchOrders, playSound, supabase]);
+
+  /* ── Init ── */
+  useEffect(() => {
+    isMountedRef.current = true;
+    fetchOrders();
+    subscribeRealtime();
+
     return () => {
-      supabase.removeChannel(channel);
+      // Cleanup completo ao desmontar
+      isMountedRef.current = false;
+      removeChannel();
+      stopPolling();
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      toast.dismiss("realtime-failed");
     };
-  }, [tenantId, fetchOrders, supabase, playSound]);
+  }, [tenantId]); // re-executa só se o tenant mudar
 
   /* ── Update status ── */
   const handleUpdateStatus = useCallback(
@@ -215,13 +348,10 @@ export default function Dashboard() {
             (sum, addon) => sum + Number(addon.price),
             0,
           ) ?? 0;
-
-        const itemTotal =
-          (Number(item.unit_price) + addonsTotal) * Number(item.quantity);
-
-        return sum + itemTotal;
+        return (
+          sum + (Number(item.unit_price) + addonsTotal) * Number(item.quantity)
+        );
       }, 0);
-
       return acc + itemsTotal + Number(order.delivery_fee);
     }, 0);
 
@@ -259,7 +389,18 @@ export default function Dashboard() {
               value="12 MIN"
             />
 
-            {/* Botão de ativar som — precisa ser clicado uma vez pelo dono */}
+            {/* Indicador de conexão */}
+            <ConnectionBadge
+              status={connStatus}
+              onRetry={() => {
+                retryCountRef.current = 0;
+                setConnStatus("connecting");
+                stopPolling();
+                toast.dismiss("realtime-failed");
+                subscribeRealtime();
+              }}
+            />
+
             <button
               onClick={enableSound}
               disabled={soundEnabled}
@@ -319,9 +460,20 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold tracking-tight text-text">
             Monitor da Cozinha
           </h2>
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-surface-alt border border-border rounded text-[10px] font-black text-accent uppercase tracking-tighter">
-            <ArrowClockwise className={loading ? "animate-spin" : ""} /> Live
-          </span>
+          <div className="flex items-center gap-2">
+            {connStatus === "polling" || connStatus === "failed" ? (
+              <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">
+                Polling 30s
+              </span>
+            ) : null}
+            <button
+              onClick={fetchOrders}
+              className="flex items-center gap-1.5 px-2 py-1 bg-surface-alt border border-border rounded text-[10px] font-black text-accent uppercase tracking-tighter hover:bg-surface transition-colors"
+            >
+              <ArrowClockwise className={loading ? "animate-spin" : ""} />{" "}
+              Atualizar
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -371,6 +523,66 @@ export default function Dashboard() {
   );
 }
 
+/* ── ConnectionBadge ─────────────────────────────────────────── */
+
+function ConnectionBadge({
+  status,
+  onRetry,
+}: {
+  status: ConnectionStatus;
+  onRetry: () => void;
+}) {
+  const map: Record<
+    ConnectionStatus,
+    { icon: React.ReactNode; label: string; cls: string }
+  > = {
+    connecting: {
+      icon: <WifiLow size={14} className="animate-pulse" />,
+      label: "Conectando...",
+      cls: "border-border text-text-muted bg-surface",
+    },
+    live: {
+      icon: <WifiHigh size={14} />,
+      label: "Ao vivo",
+      cls: "border-green-500/30 text-green-500 bg-green-500/10",
+    },
+    reconnecting: {
+      icon: <WifiLow size={14} className="animate-pulse" />,
+      label: "Reconectando...",
+      cls: "border-amber-500/30 text-amber-400 bg-amber-500/10",
+    },
+    polling: {
+      icon: <ArrowClockwise size={14} className="animate-spin" />,
+      label: "Modo polling",
+      cls: "border-amber-500/30 text-amber-400 bg-amber-500/10",
+    },
+    failed: {
+      icon: <WifiSlash size={14} />,
+      label: "Sem conexão",
+      cls: "border-red-500/30 text-red-400 bg-red-500/10",
+    },
+  };
+
+  const { icon, label, cls } = map[status];
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${cls}`}
+    >
+      {icon}
+      <span>{label}</span>
+      {(status === "failed" || status === "reconnecting") && (
+        <button
+          onClick={onRetry}
+          className="ml-1 underline underline-offset-2 hover:opacity-70 transition-opacity"
+        >
+          Tentar agora
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ── OrderCard ───────────────────────────────────────────────── */
 
 function OrderCard({
@@ -400,9 +612,8 @@ function OrderCard({
             : ""
         }`}
       >
-        {/* Efeito de gradiente no topo */}
         <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent/10 blur-[60px] transition-opacity group-hover:opacity-100" />
-        {/* Header: ID, Horário e Status */}
+
         <div className="flex items-start justify-between mb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -416,10 +627,16 @@ function OrderCard({
             <h3 className="text-lg font-black text-text tracking-tight truncate max-w-[160px]">
               {order.customers?.name ?? "Cliente"}
             </h3>
+            {order.bills?.tables && (
+              <span className="text-[11px] text-accent font-bold">
+                {order.bills.tables.label ??
+                  `Mesa ${order.bills.tables.number}`}
+              </span>
+            )}{" "}
           </div>
           <StatusBadge status={order.status} />
         </div>
-        {/* Itens do Pedido */}
+
         <div className="space-y-2 mb-5">
           {order.order_items?.slice(0, 2).map((item) => {
             const addonsTotal =
@@ -429,7 +646,6 @@ function OrderCard({
               ) ?? 0;
             const itemTotal =
               (Number(item.unit_price) + addonsTotal) * Number(item.quantity);
-
             return (
               <div
                 key={item.id}
@@ -465,7 +681,7 @@ function OrderCard({
             </p>
           )}
         </div>
-        {/* Endereço Sutil */}
+
         {order.delivery_address && !compact && (
           <div className="flex items-center gap-2 mb-5 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
             <MapPin size={14} className="text-accent shrink-0" />
@@ -474,7 +690,7 @@ function OrderCard({
             </span>
           </div>
         )}
-        {/* Footer: Pagamento e Total */}
+
         <div className="flex items-center justify-between py-4 border-t border-white/5">
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-black tracking-widest text-text-muted">
@@ -493,10 +709,9 @@ function OrderCard({
             </span>
           </div>
         </div>
-        {/* Ações */}
+
         {!compact ? (
           <div className="flex flex-col gap-3 mt-2">
-            {/* Grid superior para ações de visualização e principal */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowDetails(true)}
@@ -510,8 +725,7 @@ function OrderCard({
               >
                 <PrinterIcon size={14} weight="bold" />
                 Imprimir
-              </Link>{" "}
-              {/* Botão de Próximo Passo ocupando a largura total da grid interna */}
+              </Link>
               <div className="col-span-2">
                 {hasNext ? (
                   <button
@@ -530,15 +744,10 @@ function OrderCard({
                 )}
               </div>
             </div>
-
-            {/* Botão de Cancelar fora da grid para ter destaque negativo/secundário */}
             {order.status === "pending" && (
               <button
                 onClick={() => onCancel(order.id)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest 
-                   bg-red-500/5 border border-red-500/10 text-red-500/60 
-                   hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 
-                   transition-all duration-200 active:scale-[0.98] group/cancel"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest bg-red-500/5 border border-red-500/10 text-red-500/60 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 transition-all duration-200 active:scale-[0.98] group/cancel"
               >
                 <X
                   size={14}
@@ -556,8 +765,9 @@ function OrderCard({
           >
             Expandir Pedido
           </button>
-        )}{" "}
+        )}
       </div>
+
       {showDetails && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div

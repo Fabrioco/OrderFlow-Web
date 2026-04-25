@@ -18,7 +18,20 @@ export default function PrintPage() {
     async function fetchOrder() {
       const { data } = await supabase
         .from("orders")
-        .select("*, customers(name, phone), order_items(*), tenants(name)")
+        .select(
+          `
+            *,
+            customers(name, phone),
+            order_items(*),
+            tenants(name),
+            bills (
+              tables (
+                number,
+                label
+              )
+            )
+          `,
+        )
         .eq("id", id)
         .single();
       setOrder((data as Order) ?? null);
@@ -26,6 +39,46 @@ export default function PrintPage() {
     }
     fetchOrder();
   }, [id]);
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+    const receiptElement = document.getElementById("receipt");
+
+    if (printWindow && receiptElement) {
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Imprimir Pedido</title>
+          <style>
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: 'Courier New', monospace;
+              display: flex; 
+              justify-content: center; 
+            }
+            #receipt { 
+              width: 78mm; 
+              padding: 5px; 
+              box-sizing: border-box;
+            }
+          </style>
+        </head>
+        <body>
+          ${receiptElement.outerHTML}
+          <script>
+            window.onload = () => {
+              window.print();
+              window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+      printWindow.document.close();
+    }
+  };
 
   if (loading) {
     return (
@@ -56,8 +109,8 @@ export default function PrintPage() {
         </button>
 
         <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-black text-menu-text text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
+          onClick={handlePrint}
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-bg text-menu-text text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
         >
           <Printer size={16} weight="bold" />
           Imprimir
@@ -103,6 +156,17 @@ export default function PrintPage() {
               style={{ fontSize: "12px", marginTop: "2px", fontWeight: "bold" }}
             >
               {new Date(order.created_at).toLocaleString("pt-BR")}
+            </div>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: "900",
+                marginTop: "4px",
+              }}
+            >
+              {order.bills?.tables &&
+                (order.bills.tables.label ??
+                  `Mesa ${order.bills.tables.number}`)}
             </div>
           </div>
 
@@ -289,30 +353,7 @@ export default function PrintPage() {
       {/* CSS Global de Impressão */}
       <style jsx global>{`
         @media print {
-          #receipt {
-            filter: contrast(1.4) brightness(0.9);
-          }
-
-          @page {
-            size: 80mm auto;
-            margin: 0;
-          }
-
-          * {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            text-rendering: geometricPrecision;
-          }
-
-          body {
-            background: white !important;
-          }
-
-          nav,
-          aside,
-          footer,
-          header,
-          button,
+          /* Esconde elementos de interface da página original se alguém usar Ctrl+P */
           .print\\:hidden {
             display: none !important;
           }
