@@ -11,7 +11,7 @@ export type OrderStatus =
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
-export type PaymentMethod = "cash" | "pix" | "credit_card" | "debit_card";
+export type PaymentMethod = "cash" | "pix" | "card_on_delivery";
 
 export type TenantPlan = "free" | "essencial" | "basico" | "pro";
 

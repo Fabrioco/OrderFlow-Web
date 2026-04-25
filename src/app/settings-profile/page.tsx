@@ -83,8 +83,12 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode }[] = [
 const PAYMENT_OPTIONS = [
   { value: "cash", label: "Dinheiro", sub: "Na entrega", icon: "💵" },
   { value: "pix", label: "PIX", sub: "Na entrega", icon: "🏦" },
-  { value: "credit_card", label: "Crédito", sub: "Maquininha", icon: "💳" },
-  { value: "debit_card", label: "Débito", sub: "Maquininha", icon: "💳" },
+  {
+    value: "card_on_delivery",
+    label: "Cartão",
+    sub: "Na entrega",
+    icon: "💳",
+  },
 ];
 
 const PIX_KEY_TYPES = [

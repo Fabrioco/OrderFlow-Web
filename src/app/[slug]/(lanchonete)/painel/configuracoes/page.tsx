@@ -3,7 +3,6 @@ import { useTenantSettings } from "@/hooks/useTenantSettings";
 import { createClient } from "@/utils/supabase/client";
 import {
   Storefront,
-  CreditCard,
   Clock,
   ShieldCheck,
   ImageIcon,
@@ -887,7 +886,7 @@ export default function SettingsPage() {
                     Métodos Aceitos
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    {["cash", "pix", "card_on_delivery", "credit_card"].map(
+                    {["cash", "pix", "card_on_delivery"].map(
                       (method) => (
                         <button
                           key={method}
@@ -902,9 +901,7 @@ export default function SettingsPage() {
                             ? "Dinheiro"
                             : method === "pix"
                               ? "PIX Manual"
-                              : method === "card_on_delivery"
-                                ? "Cartão na Entrega"
-                                : "Cartão de Crédito/Débito"}
+                              : "Cartão na Entrega"}
                         </button>
                       ),
                     )}
@@ -991,49 +988,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm relative overflow-hidden">
-              <div className="flex items-start justify-between mb-4">
-                <div
-                  className={`p-3 rounded-2xl ${
-                    settings?.mp_access_token
-                      ? "bg-green-500/10 text-green-500"
-                      : "bg-accent/10 text-accent"
-                  }`}
-                >
-                  <CreditCard size={24} weight="duotone" />
-                </div>
-                {settings?.mp_access_token && (
-                  <CheckCircle
-                    size={20}
-                    weight="fill"
-                    className="text-green-500"
-                  />
-                )}
-              </div>
-              <h3 className="font-bold mb-1">Mercado Pago</h3>
-              <p className="text-[11px] text-text-muted leading-relaxed mb-4">
-                {settings?.mp_access_token
-                  ? "Sua integração está ativa. Você pode receber pagamentos via checkout transparente."
-                  : "Conecte sua conta para aceitar cartões de crédito e PIX automático com conciliação."}
-              </p>
-              <button
-                onClick={
-                  !settings?.mp_access_token
-                    ? () =>
-                        (window.location.href = `/api/auth/mercadopago?tenantId=${settings.id}`)
-                    : undefined
-                }
-                className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  settings?.mp_access_token
-                    ? "bg-surface-alt border border-border text-text-muted cursor-default"
-                    : "bg-accent text-menu-text hover:brightness-110"
-                }`}
-              >
-                {settings?.mp_access_token
-                  ? "Conectado com Sucesso"
-                  : "Conectar agora"}
-              </button>
-            </div>
           </div>
         </div>
       </section>

@@ -286,7 +286,6 @@ export default function PrintPage() {
             >
               <span>FORMA DE PAGTO:</span>
               <span style={{ textAlign: "right" }}>
-                {order.payment_method === "credit_card" && "CARTÃO (ONLINE)"}
                 {order.payment_method === "pix" && "PIX (NA ENTREGA)"}
                 {order.payment_method === "cash" && "DINHEIRO (NA ENTREGA)"}
                 {order.payment_method === "card_on_delivery" &&

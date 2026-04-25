@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { initMercadoPago } from "@mercadopago/sdk-react";
 import { toast } from "sonner";
 
 // Componentes
@@ -51,7 +50,6 @@ export default function MenuPage() {
   const [step, setStep] = useState<Step>("cart");
   const [form, setForm] = useState<CustomerForm>(BLANK_FORM);
   const [processing, setProcessing] = useState(false);
-  const [mpReady, setMpReady] = useState(false);
 
   const [savedCustomer, setSavedCustomer] = useState<CustomerForm | null>(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -89,18 +87,13 @@ export default function MenuPage() {
         const { data: tenantData, error: tErr } = await supabase
           .from("tenants")
           .select(
-            "id, name, slug, is_open, description, logo_url, payment_methods, pix_key, pix_key_type, mp_public_key, banner_url, primary_color, button_text_color, instagram_url, whatsapp_url",
+            "id, name, slug, is_open, description, logo_url, payment_methods, pix_key, pix_key_type, banner_url, primary_color, button_text_color, instagram_url, whatsapp_url",
           )
           .eq("slug", slug)
           .single();
 
         if (tErr || !tenantData) throw new Error("Lanchonete não encontrada");
         setTenant(tenantData as Tenant);
-
-        if (tenantData.mp_public_key) {
-          initMercadoPago(tenantData.mp_public_key, { locale: "pt-BR" });
-          setMpReady(true);
-        }
 
         const [{ data: prods }, { data: dz }, { data: ads }] =
           await Promise.all([
@@ -191,11 +184,7 @@ export default function MenuPage() {
   const selectedZone = zones.find((z) => z.neighborhood === form.neighborhood);
   const deliveryFee = selectedZone?.fee ?? 0;
   const totalFinal = cartTotal + deliveryFee;
-  const isCardPayment = ["credit_card", "debit_card"].includes(
-    form.payment_method,
-  );
-
-  async function handleCheckout(mpFormData?: any) {
+  async function handleCheckout() {
     if (
       !form.name ||
       !form.phone ||
@@ -211,7 +200,7 @@ export default function MenuPage() {
 
     setProcessing(true);
     try {
-      const res = await fetch("/api/mp/checkout", {
+      const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,14 +228,16 @@ export default function MenuPage() {
             quantity: i.quantity,
             selected_addons: i.selected_addons,
           })),
-          use_mp: isCardPayment,
-          mp_form_data: mpFormData,
         }),
       });
 
       const json = await res.json();
       if (!res.ok)
-        throw new Error(json.error?.message || "Erro ao processar pedido");
+        throw new Error(
+          (typeof json.error === "string" && json.error) ||
+            json.error?.message ||
+            "Erro ao processar pedido",
+        );
 
       toast.success("Pedido realizado!");
       localStorage.setItem(
@@ -359,10 +350,8 @@ export default function MenuPage() {
               <DrawerInfo
                 cartTotal={cartTotal}
                 handleCheckout={handleCheckout}
-                isCardPayment={isCardPayment}
                 deliveryFee={deliveryFee}
                 form={form}
-                mpReady={mpReady}
                 processing={processing}
                 selectedZone={selectedZone}
                 setForm={setForm}

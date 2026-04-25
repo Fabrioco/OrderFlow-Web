@@ -40,25 +40,6 @@ async function checkSupabase(): Promise<ServiceResult> {
   }
 }
 
-async function checkMercadoPago(): Promise<ServiceResult> {
-  const start = Date.now();
-  try {
-    // Endpoint público do MP — não precisa de auth
-    const res = await fetch("https://api.mercadopago.com/v1/payment_methods", {
-      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
-      signal: AbortSignal.timeout(5000),
-    });
-    const latency = Date.now() - start;
-
-    if (res.status === 200) return { name: "Pagamentos (Mercado Pago)", status: "operational", latency };
-    if (res.status >= 500) return { name: "Pagamentos (Mercado Pago)", status: "outage", latency };
-    // 4xx pode ser chave inválida — considera degraded, não outage
-    return { name: "Pagamentos (Mercado Pago)", status: "degraded", latency };
-  } catch (e: any) {
-    return { name: "Pagamentos (Mercado Pago)", status: "outage", latency: null, error: e.message };
-  }
-}
-
 async function checkVercel(): Promise<ServiceResult> {
   const start = Date.now();
   try {
@@ -87,14 +68,13 @@ async function checkSelf(): Promise<ServiceResult> {
 // ── handler ───────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const [supabase, mercadopago, vercel, self] = await Promise.all([
+  const [supabase, vercel, self] = await Promise.all([
     checkSupabase(),
-    checkMercadoPago(),
     checkVercel(),
     checkSelf(),
   ]);
 
-  const services: ServiceResult[] = [self, supabase, mercadopago, vercel];
+  const services: ServiceResult[] = [self, supabase, vercel];
 
   const allOperational = services.every((s) => s.status === "operational");
   const hasOutage = services.some((s) => s.status === "outage");

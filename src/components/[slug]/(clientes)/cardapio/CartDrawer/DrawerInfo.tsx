@@ -1,5 +1,4 @@
 import { PAYMENT_LABELS } from "@/constants/payment-methods";
-import { CardPayment } from "@mercadopago/sdk-react";
 import {
   CheckCircleIcon,
   MapPinIcon,
@@ -9,30 +8,13 @@ import {
 import { InfoField } from "./InfoField";
 import { inputCls } from "@/constants/input-cls";
 import { DeliveryZone, Tenant } from "@/types/supabase";
-import { toast } from "sonner";
 import { CustomerForm } from "@/types/customerForm";
-
-type Payload = {
-  token: string;
-  payment_method_id: string;
-  issuer_id: string;
-  installments: number;
-  payer: {
-    email?: string;
-    identification: {
-      type?: string;
-      number?: string;
-    };
-  };
-};
 
 export default function DrawerInfo({
   zones,
   setForm,
   form,
   tenant,
-  isCardPayment,
-  mpReady,
   totalFinal,
   handleCheckout,
   selectedZone,
@@ -44,10 +26,8 @@ export default function DrawerInfo({
   setForm: (f: (form: CustomerForm) => CustomerForm) => void;
   form: CustomerForm;
   tenant: Tenant;
-  isCardPayment: boolean;
-  mpReady: boolean;
   totalFinal: number;
-  handleCheckout: (payload?: Payload) => void;
+  handleCheckout: () => void;
   cartTotal: number;
   selectedZone: DeliveryZone | undefined;
   deliveryFee: number;
@@ -200,57 +180,10 @@ export default function DrawerInfo({
           </div>
         </div>
 
-        {/* CARTÃO */}
-        {isCardPayment && mpReady && (
-          <div className="mt-2">
-            <label className="block text-[10px] font-black text-menu-text-secondary uppercase tracking-widest mb-3">
-              Dados do cartão
-            </label>
-
-            <div className="rounded-2xl overflow-hidden border border-menu-border/30">
-              <CardPayment
-                initialization={{ amount: totalFinal }}
-                customization={{
-                  paymentMethods: { minInstallments: 1, maxInstallments: 1 },
-                  visual: {
-                    style: {
-                      theme: "dark",
-                      customVariables: {
-                        baseColor: primary,
-                        inputFocusedBorderColor: primary,
-                      },
-                    },
-                  },
-                }}
-                onSubmit={async (param) => {
-                  const payload = {
-                    token: param.token,
-                    payment_method_id: param.payment_method_id,
-                    issuer_id: param.issuer_id,
-                    installments: param.installments,
-                    payer: {
-                      email: param.payer?.email,
-                      identification: {
-                        type: param.payer?.identification?.type || "CPF",
-                        number: param.payer?.identification?.number,
-                      },
-                    },
-                  };
-
-                  await handleCheckout(payload);
-                }}
-                onError={() => {
-                  toast.error("Erro ao processar cartão.");
-                }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* FOOTER */}
-      {!isCardPayment && (
-        <div className="p-6 border-t border-menu-border/20 space-y-3 shrink-0">
+      <div className="p-6 border-t border-menu-border/20 space-y-3 shrink-0">
           <div className="flex justify-between text-sm text-menu-text-secondary">
             <span>Subtotal</span>
             <span>
@@ -279,7 +212,7 @@ export default function DrawerInfo({
           </div>
 
           <button
-            onClick={() => handleCheckout()}
+            onClick={handleCheckout}
             disabled={processing}
             style={{
               backgroundColor: primary,
@@ -297,7 +230,6 @@ export default function DrawerInfo({
             )}
           </button>
         </div>
-      )}
     </>
   );
 }
