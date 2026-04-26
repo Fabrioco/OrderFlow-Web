@@ -35,13 +35,6 @@ type OrderStatus =
   | "delivered"
   | "cancelled";
 
-type ConnectionStatus =
-  | "connecting"
-  | "live"
-  | "reconnecting"
-  | "polling"
-  | "failed";
-
 /* ── Status helpers ──────────────────────────────────────────── */
 
 const STATUS_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
@@ -76,12 +69,21 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   cancelled: "bg-red-500/10    text-red-400    border-red-500/20",
 };
 
-/* ── Constantes de reconexão ─────────────────────────────────── */
+/* ── Tipos ───────────────────────── */
 
-const MAX_RETRIES = 6; // máximo de tentativas de reconexão
-const BASE_DELAY_MS = 1_000; // delay inicial: 1s
-const MAX_DELAY_MS = 32_000; // cap do backoff: 32s
-const POLLING_INTERVAL_MS = 30_000; // intervalo de polling de fallback
+type ConnectionStatus =
+  | "connecting"
+  | "live"
+  | "reconnecting"
+  | "polling"
+  | "failed";
+
+/* ── Constantes ───────────────────── */
+
+const MAX_RETRIES = 6;
+const BASE_DELAY = 1000;
+const MAX_DELAY = 32000;
+const POLLING_INTERVAL = 30000;
 
 /* ── Component ───────────────────────────────────────────────── */
 
@@ -107,50 +109,184 @@ export default function Dashboard() {
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const isMountedRef = useRef(true);
+  const lastEventRef = useRef(Date.now());
+  const fetchingRef = useRef(false); // ✅ faltava
 
-  /* ── Fetch ── */
+  function removeChannel() {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+  }
+
+  function startPolling() {
+    if (pollingTimerRef.current) return;
+
+    setConnStatus("polling");
+
+    pollingTimerRef.current = setInterval(() => {
+      fetchOrders();
+    }, POLLING_INTERVAL);
+  }
+
   const fetchOrders = useCallback(async () => {
-    if (!tenantId) return;
+    if (!tenantId || fetchingRef.current) return;
+
+    fetchingRef.current = true;
+
     try {
       const todayStart = startOfDay(new Date()).toISOString();
+
       const { data, error } = await supabase
         .from("orders")
         .select(
           `
-          *,
-          customers(name, phone),
-          order_items(*),
-          bills (
-            table_id,
-            tables (
-              number,
-              label
-            )
-          )
-        `,
+        *,
+        customers(name, phone),
+        order_items(*),
+        bills (
+          table_id,
+          tables (number, label)
+        )
+      `,
         )
         .eq("tenant_id", tenantId)
         .gte("created_at", todayStart)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+
       if (isMountedRef.current) {
         setOrders((data as Order[]) ?? []);
       }
     } catch (err) {
       console.error("Erro ao buscar pedidos:", err);
     } finally {
+      fetchingRef.current = false;
       if (isMountedRef.current) setLoading(false);
     }
   }, [tenantId, supabase]);
+  const subscribeRealtime = useCallback(() => {
+    if (!tenantId) return;
 
-  /* ── Polling de fallback ── */
-  function startPolling() {
-    if (pollingTimerRef.current) return; // já está rodando
-    pollingTimerRef.current = setInterval(() => {
-      fetchOrders();
-    }, POLLING_INTERVAL_MS);
-  }
+    removeChannel();
+
+    const channel = supabase
+      .channel(`orders-${tenantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          lastEventRef.current = Date.now();
+          fetchOrders();
+          playSound();
+        },
+      )
+      .subscribe((status, err) => {
+        if (!isMountedRef.current) return;
+
+        if (status === "SUBSCRIBED") {
+          retryCountRef.current = 0;
+          setConnStatus("live");
+          stopPolling();
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || err) {
+          const attempt = retryCountRef.current;
+
+          if (attempt >= MAX_RETRIES) {
+            setConnStatus("failed");
+            startPolling();
+            toast.error("Realtime caiu. Usando polling.");
+            return;
+          }
+
+          const delay = getRetryDelay(attempt);
+          retryCountRef.current++;
+
+          setConnStatus("reconnecting");
+
+          retryTimerRef.current = setTimeout(() => {
+            subscribeRealtime();
+          }, delay);
+        }
+      });
+
+    channelRef.current = channel;
+  }, [tenantId, fetchOrders, playSound, supabase]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const diff = Date.now() - lastEventRef.current;
+
+      if (diff > 45000) {
+        console.warn("Realtime zumbi detectado");
+
+        retryCountRef.current = 0;
+        setConnStatus("reconnecting");
+
+        removeChannel();
+        subscribeRealtime();
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [subscribeRealtime]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (connStatus === "live") {
+        fetchOrders();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [connStatus, fetchOrders]);
+
+  useEffect(() => {
+    function offline() {
+      setConnStatus("failed");
+      startPolling();
+    }
+
+    function online() {
+      setConnStatus("connecting");
+      stopPolling();
+      subscribeRealtime();
+    }
+
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
+
+    return () => {
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", online);
+    };
+  }, [subscribeRealtime]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    fetchOrders();
+    subscribeRealtime();
+
+    return () => {
+      isMountedRef.current = false;
+
+      removeChannel();
+      stopPolling();
+
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, [tenantId]);
 
   function stopPolling() {
     if (pollingTimerRef.current) {
@@ -159,130 +295,13 @@ export default function Dashboard() {
     }
   }
 
-  /* ── Limpar canal atual ── */
-  function removeChannel() {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-  }
-
   /* ── Calcular delay com backoff exponencial + jitter ── */
   function getRetryDelay(attempt: number): number {
-    const exp = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
+    const exp = Math.min(BASE_DELAY * 2 ** attempt, MAX_DELAY);
     // jitter aleatório de ±20% para evitar thundering herd
     const jitter = exp * 0.2 * (Math.random() * 2 - 1);
     return Math.round(exp + jitter);
   }
-
-  /* ── Criar e inscrever canal ── */
-  const subscribeRealtime = useCallback(() => {
-    if (!tenantId || !isMountedRef.current) return;
-
-    removeChannel();
-
-    const channel = supabase
-      .channel(`realtime:orders:${tenantId}:${Date.now()}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          playSound();
-          fetchOrders();
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          fetchOrders();
-        },
-      )
-      .subscribe((status, err) => {
-        if (!isMountedRef.current) return;
-
-        if (status === "SUBSCRIBED") {
-          // Conexão estabelecida com sucesso
-          retryCountRef.current = 0;
-          setConnStatus("live");
-          stopPolling(); // para o polling de fallback se estava rodando
-          console.log("[Realtime] Conectado com sucesso.");
-          return;
-        }
-
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || err) {
-          console.warn(`[Realtime] Problema: ${status}`, err);
-
-          const attempt = retryCountRef.current;
-
-          if (attempt >= MAX_RETRIES) {
-            // Esgotou tentativas → cai para polling
-            setConnStatus("failed");
-            startPolling();
-            toast.error(
-              "Conexão em tempo real indisponível. Atualizando a cada 30s.",
-              { id: "realtime-failed", duration: Infinity },
-            );
-            console.error(
-              "[Realtime] Máximo de tentativas atingido. Polling ativo.",
-            );
-            return;
-          }
-
-          const delay = getRetryDelay(attempt);
-          retryCountRef.current += 1;
-          setConnStatus("reconnecting");
-
-          console.log(
-            `[Realtime] Tentativa ${attempt + 1}/${MAX_RETRIES} em ${delay}ms...`,
-          );
-
-          retryTimerRef.current = setTimeout(() => {
-            if (isMountedRef.current) subscribeRealtime();
-          }, delay);
-        }
-
-        if (status === "CLOSED") {
-          // Canal fechado inesperadamente — trata igual ao erro
-          if (retryCountRef.current < MAX_RETRIES) {
-            const delay = getRetryDelay(retryCountRef.current);
-            retryCountRef.current += 1;
-            setConnStatus("reconnecting");
-            retryTimerRef.current = setTimeout(() => {
-              if (isMountedRef.current) subscribeRealtime();
-            }, delay);
-          }
-        }
-      });
-
-    channelRef.current = channel;
-  }, [tenantId, fetchOrders, playSound, supabase]);
-
-  /* ── Init ── */
-  useEffect(() => {
-    isMountedRef.current = true;
-    fetchOrders();
-    subscribeRealtime();
-
-    return () => {
-      // Cleanup completo ao desmontar
-      isMountedRef.current = false;
-      removeChannel();
-      stopPolling();
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-      toast.dismiss("realtime-failed");
-    };
-  }, [tenantId]); // re-executa só se o tenant mudar
 
   /* ── Update status ── */
   const handleUpdateStatus = useCallback(
