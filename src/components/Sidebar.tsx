@@ -14,9 +14,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { useTheme } from "@/contexts/ThemeProvider";
 
 export function Sidebar({
   tenantName,
@@ -28,8 +26,6 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const { theme, toggle } = useTheme();
-  const isDark = theme === "dark";
 
   const [role, setRole] = useState<string | null>(null);
 
@@ -95,21 +91,6 @@ export function Sidebar({
 
   const mobileMenuItems = menuItems.filter((item) => item.path !== "/admin");
 
-  async function handleLogout() {
-    toast.promise(
-      async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        router.replace("/login");
-        router.refresh();
-      },
-      {
-        loading: "Saindo...",
-        success: "Até logo!",
-        error: "Erro ao sair.",
-      },
-    );
-  }
 
   return (
     <>
@@ -166,20 +147,7 @@ export function Sidebar({
 
         <div className="space-y-1 border-t border-border pt-6">
           {/* Toggle tema — desktop */}
-          <button
-            onClick={toggle}
-            aria-label={isDark ? "Ativar tema claro" : "Ativar tema escuro"}
-            className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-text transition-colors group"
-          >
-            {isDark ? (
-              <SunIcon size={18} className="text-amber-400" />
-            ) : (
-              <MoonIcon size={18} className="group-hover:text-accent" />
-            )}
-            <span className="text-[10px] font-black uppercase tracking-[0.15em]">
-              {isDark ? "Tema Claro" : "Tema Escuro"}
-            </span>
-          </button>
+
 
           <Link
             href={`/${slug}/suporte`}
@@ -191,15 +159,7 @@ export function Sidebar({
             </span>
           </Link>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2 text-text-muted hover:text-red-400 transition-colors group"
-          >
-            <SignOut size={18} className="group-hover:text-red-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.15em]">
-              Sair
-            </span>
-          </button>
+
         </div>
       </aside>
       {/* ── MOBILE BOTTOM TAB BAR (sm/md) ── */}

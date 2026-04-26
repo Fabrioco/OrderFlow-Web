@@ -1,4 +1,5 @@
 "use client";
+import { useTheme } from "@/contexts/ThemeProvider";
 import { useTenantSettings } from "@/hooks/useTenantSettings";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -21,6 +22,9 @@ import {
   PlusIcon,
   TrashIcon,
   Motorcycle,
+  SignOutIcon,
+  SunIcon,
+  MoonIcon,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -385,6 +389,25 @@ export default function SettingsPage() {
 
     await fetchTables();
   }
+
+  async function handleLogout() {
+    toast.promise(
+      async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        router.replace("/login");
+        router.refresh();
+      },
+      {
+        loading: "Saindo...",
+        success: "Até logo!",
+        error: "Erro ao sair.",
+      },
+    );
+  }
+
+  const { theme, toggle } = useTheme();
+  const isDark = theme === "dark";
 
   if (!settings)
     return (
@@ -1133,7 +1156,6 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-
           {/* ── SIDEBAR DIREITA ── */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-surface border border-border rounded-3xl p-6 shadow-sm">
@@ -1171,7 +1193,67 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-          </div>
+
+            {/* Tema */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                {isDark ? (
+                  <SunIcon size={20} className="text-accent" weight="duotone" />
+                ) : (
+                  <MoonIcon
+                    size={20}
+                    className="text-accent"
+                    weight="duotone"
+                  />
+                )}
+                <h2 className="font-bold">Aparência</h2>
+              </div>
+              <div className="p-6">
+                <button
+                  onClick={toggle}
+                  aria-label={
+                    isDark ? "Ativar tema claro" : "Ativar tema escuro"
+                  }
+                  className="w-full flex items-center justify-between px-5 py-3 rounded-2xl border border-border bg-bg hover:border-accent/50 transition-all group"
+                >
+                  <span className="text-sm font-bold text-text">
+                    {isDark ? "Tema Claro" : "Tema Escuro"}
+                  </span>
+                  {isDark ? (
+                    <SunIcon size={18} className="text-amber-400" />
+                  ) : (
+                    <MoonIcon
+                      size={18}
+                      className="text-text-muted group-hover:text-accent transition-colors"
+                    />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Logout */}
+            <div className="bg-surface border border-border rounded-3xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border/50 bg-surface-alt/20 flex items-center gap-3">
+                <SignOutIcon
+                  size={20}
+                  className="text-accent"
+                  weight="duotone"
+                />
+                <h2 className="font-bold">Sessão</h2>
+              </div>
+              <div className="p-6">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-between px-5 py-3 rounded-2xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/40 transition-all group"
+                >
+                  <span className="text-sm font-bold text-red-400">
+                    Sair da conta
+                  </span>
+                  <SignOutIcon size={18} className="text-red-400" />
+                </button>
+              </div>
+            </div>
+          </div>{" "}
         </div>
       </section>
     </main>
