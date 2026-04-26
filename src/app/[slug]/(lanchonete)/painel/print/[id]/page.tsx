@@ -18,20 +18,7 @@ export default function PrintPage() {
     async function fetchOrder() {
       const { data } = await supabase
         .from("orders")
-        .select(
-          `
-            *,
-            customers(name, phone),
-            order_items(*),
-            tenants(name),
-            bills (
-              tables (
-                number,
-                label
-              )
-            )
-          `,
-        )
+        .select("*, customers(name, phone), order_items(*), tenants(name)")
         .eq("id", id)
         .single();
       setOrder((data as Order) ?? null);
@@ -39,46 +26,6 @@ export default function PrintPage() {
     }
     fetchOrder();
   }, [id]);
-
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank", "width=800,height=600");
-    const receiptElement = document.getElementById("receipt");
-
-    if (printWindow && receiptElement) {
-      printWindow.document.write(`
-      <html>
-        <head>
-          <title>Imprimir Pedido</title>
-          <style>
-            @page { size: 80mm auto; margin: 0; }
-            body { 
-              margin: 0; 
-              padding: 0; 
-              font-family: 'Courier New', monospace;
-              display: flex; 
-              justify-content: center; 
-            }
-            #receipt { 
-              width: 78mm; 
-              padding: 5px; 
-              box-sizing: border-box;
-            }
-          </style>
-        </head>
-        <body>
-          ${receiptElement.outerHTML}
-          <script>
-            window.onload = () => {
-              window.print();
-              window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-      printWindow.document.close();
-    }
-  };
 
   if (loading) {
     return (
@@ -109,19 +56,24 @@ export default function PrintPage() {
         </button>
 
         <button
-          onClick={handlePrint}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-bg text-menu-text text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
+          onClick={() => {
+            document.body.style.overflow = "hidden";
+            window.print();
+            document.body.style.overflow = "auto";
+          }}
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-black text-white text-sm font-bold hover:bg-gray-800 active:scale-95 transition-all"
         >
           <Printer size={16} weight="bold" />
           Imprimir
         </button>
       </div>
       {/* Cupom — centralizado na tela, aparece direto na impressão */}
-      <div className="min-h-screen bg-gray-100 print:bg-white flex items-start justify-center pt-8 print:pt-0">
+      <div className="flex justify-center">
         <div
           id="receipt"
           style={{
             width: "300px",
+            boxSizing: "border-box",
             padding: "16px",
             fontFamily: "'Courier New', monospace",
             color: "#000",
@@ -156,17 +108,6 @@ export default function PrintPage() {
               style={{ fontSize: "12px", marginTop: "2px", fontWeight: "bold" }}
             >
               {new Date(order.created_at).toLocaleString("pt-BR")}
-            </div>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: "900",
-                marginTop: "4px",
-              }}
-            >
-              {order.bills?.tables &&
-                (order.bills.tables.label ??
-                  `Mesa ${order.bills.tables.number}`)}
             </div>
           </div>
 
@@ -286,6 +227,7 @@ export default function PrintPage() {
             >
               <span>FORMA DE PAGTO:</span>
               <span style={{ textAlign: "right" }}>
+                {order.payment_method === "credit_card" && "CARTÃO (ONLINE)"}
                 {order.payment_method === "pix" && "PIX (NA ENTREGA)"}
                 {order.payment_method === "cash" && "DINHEIRO (NA ENTREGA)"}
                 {order.payment_method === "card_on_delivery" &&
@@ -349,12 +291,42 @@ export default function PrintPage() {
           </div>
         </div>
       </div>
-      {/* CSS Global de Impressão */}
       <style jsx global>{`
         @media print {
-          /* Esconde elementos de interface da página original se alguém usar Ctrl+P */
-          .print\\:hidden {
-            display: none !important;
+          /* 1. Remove qualquer margem do navegador */
+          @page {
+            size: 80mm auto; /* Tamanho exato da bobina */
+            margin: 0 !important;
+          }
+
+          /* 2. Força o corpo a ser apenas o cupom */
+          body,
+          html {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important; /* Previne scroll que causa 2ª página */
+          }
+
+          /* 3. Oculta tudo que não é o nosso ID */
+          body * {
+            visibility: hidden;
+          }
+
+          #receipt,
+          #receipt * {
+            visibility: visible;
+          }
+
+          /* 4. O segredo: Cupom posicionado no topo, altura absoluta */
+          #receipt {
+            display: block !important;
+            width: 78mm !important;
+            margin: 0 !important;
+            padding: 1mm 2mm 5mm 2mm !important; /* Espaço inferior para o corte */
+            height: auto !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
           }
         }
       `}</style>{" "}
