@@ -1,4 +1,5 @@
 import { CheckIcon } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 export function PricingCard({
   title,
@@ -7,6 +8,7 @@ export function PricingCard({
   buttonText,
   highlighted = false,
 }: any) {
+  const router = useRouter();
   return (
     <div
       className={`p-10 rounded-3xl border transition-all flex flex-col relative overflow-hidden ${
@@ -50,6 +52,7 @@ export function PricingCard({
             ? "bg-linear-to-r from-[#C084FC] to-accent text-menu-text hover:brightness-110 shadow-lg shadow-accent/20"
             : "bg-surface-alt text-text hover:bg-border"
         }`}
+        onClick={() => router.push("register")}
       >
         {buttonText}
       </button>
