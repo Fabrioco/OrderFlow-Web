@@ -18,7 +18,7 @@ export function Header() {
     <header className="fixed top-0 w-full h-20 flex items-center justify-between px-6 md:px-12 backdrop-blur-md z-50 border-b border-border bg-bg/20">
       <div className="flex items-center gap-8">
         <span className="text-xl font-bold tracking-tighter text-accent">
-          OrderFlow
+          The Order Flow
         </span>
         <nav className="hidden md:flex gap-8 text-sm font-medium text-text-secondary">
           <button

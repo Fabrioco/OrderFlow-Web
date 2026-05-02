@@ -21,10 +21,10 @@ export async function POST(req: NextRequest) {
     }
 
     await resend.emails.send({
-      from: "OrderFlow <noreply@orderflow.com.br>", // domínio verificado no Resend
+      from: "The Order Flow <noreply@The Order Flow.com.br>", // domínio verificado no Resend
       to: process.env.CONTACT_EMAIL!, // seu e-mail no .env
       replyTo: email,
-      subject: `[OrderFlow] Nova mensagem de ${name}`,
+      subject: `[The Order Flow] Nova mensagem de ${name}`,
       html: `
         <div style="font-family: sans-serif; max-width: 560px; margin: auto; padding: 32px; background: #0f0f14; border: 1px solid #1e1e2e; border-radius: 16px; color: #e2e2e8;">
           <h2 style="color: #a78bfa; margin: 0 0 24px;">Nova mensagem via formulário</h2>
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
           </table>
           <hr style="border: none; border-top: 1px solid #1e1e2e; margin: 20px 0;" />
           <p style="white-space: pre-wrap; line-height: 1.7; color: #c4c4d4;">${message}</p>
-          <p style="margin-top: 32px; font-size: 11px; color: #555;">Enviado via OrderFlow — orderflow-coral.vercel.app</p>
+          <p style="margin-top: 32px; font-size: 11px; color: #555;">Enviado via The Order Flow — The Order Flow-coral.vercel.app</p>
         </div>
       `,
     });

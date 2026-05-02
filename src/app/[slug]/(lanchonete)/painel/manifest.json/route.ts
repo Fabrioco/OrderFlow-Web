@@ -18,9 +18,9 @@ export async function GET(request: NextRequest, { params }: Props) {
 
   const appName = tenant?.name
     ? `${tenant.name} — Painel`
-    : "OrderFlow — Painel";
+    : "The Order Flow — Painel";
 
-  const shortName = tenant?.name ?? "OrderFlow";
+  const shortName = tenant?.name ?? "The Order Flow";
 
   const manifest = {
     name: appName,

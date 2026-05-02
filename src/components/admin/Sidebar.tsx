@@ -54,7 +54,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <h1 className="text-base font-bold tracking-tighter text-menu-text leading-none">
-              OrderFlow
+              The Order Flow
             </h1>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted mt-0.5">
               SuperAdmin

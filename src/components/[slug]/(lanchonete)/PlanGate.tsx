@@ -131,7 +131,7 @@ export function TrialBanner({
           <Warning size={18} weight="duotone" />
           <p className="text-xs font-bold">
             Seu período de teste encerrou. Assine um plano para continuar usando
-            o OrderFlow.
+            o The Order Flow.
           </p>
         </div>
         <button

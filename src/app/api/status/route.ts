@@ -21,7 +21,7 @@ async function checkSupabase(): Promise<ServiceResult> {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
     // query leve — só confirma que o DB responde
     const { error } = await supabase
@@ -32,11 +32,27 @@ async function checkSupabase(): Promise<ServiceResult> {
 
     const latency = Date.now() - start;
 
-    if (error) return { name: "Banco de Dados (Supabase)", status: "degraded", latency, error: error.message };
-    if (latency > 2000) return { name: "Banco de Dados (Supabase)", status: "degraded", latency };
-    return { name: "Banco de Dados (Supabase)", status: "operational", latency };
+    if (error)
+      return {
+        name: "Banco de Dados (Supabase)",
+        status: "degraded",
+        latency,
+        error: error.message,
+      };
+    if (latency > 2000)
+      return { name: "Banco de Dados (Supabase)", status: "degraded", latency };
+    return {
+      name: "Banco de Dados (Supabase)",
+      status: "operational",
+      latency,
+    };
   } catch (e: any) {
-    return { name: "Banco de Dados (Supabase)", status: "outage", latency: null, error: e.message };
+    return {
+      name: "Banco de Dados (Supabase)",
+      status: "outage",
+      latency: null,
+      error: e.message,
+    };
   }
 }
 
@@ -44,25 +60,39 @@ async function checkVercel(): Promise<ServiceResult> {
   const start = Date.now();
   try {
     // Status page pública da Vercel
-    const res = await fetch("https://www.vercel-status.com/api/v2/status.json", {
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await fetch(
+      "https://www.vercel-status.com/api/v2/status.json",
+      {
+        signal: AbortSignal.timeout(5000),
+      },
+    );
     const latency = Date.now() - start;
     const json = await res.json();
 
     const indicator: string = json?.status?.indicator ?? "none";
 
-    if (indicator === "none") return { name: "Hospedagem (Vercel)", status: "operational", latency };
-    if (indicator === "minor") return { name: "Hospedagem (Vercel)", status: "degraded", latency };
+    if (indicator === "none")
+      return { name: "Hospedagem (Vercel)", status: "operational", latency };
+    if (indicator === "minor")
+      return { name: "Hospedagem (Vercel)", status: "degraded", latency };
     return { name: "Hospedagem (Vercel)", status: "outage", latency };
   } catch (e: any) {
-    return { name: "Hospedagem (Vercel)", status: "outage", latency: null, error: e.message };
+    return {
+      name: "Hospedagem (Vercel)",
+      status: "outage",
+      latency: null,
+      error: e.message,
+    };
   }
 }
 
 // Serviços internos: apenas mede o tempo de resposta da própria API
 async function checkSelf(): Promise<ServiceResult> {
-  return { name: "Plataforma Web (OrderFlow)", status: "operational", latency: 0 };
+  return {
+    name: "Plataforma Web (The Order Flow)",
+    status: "operational",
+    latency: 0,
+  };
 }
 
 // ── handler ───────────────────────────────────────────────────────────────
@@ -82,8 +112,8 @@ export async function GET() {
   const overall: ServiceStatus = allOperational
     ? "operational"
     : hasOutage
-    ? "outage"
-    : "degraded";
+      ? "outage"
+      : "degraded";
 
   return NextResponse.json(
     { overall, services, checkedAt: new Date().toISOString() },
@@ -91,6 +121,6 @@ export async function GET() {
       headers: {
         "Cache-Control": "s-maxage=60, stale-while-revalidate=30",
       },
-    }
+    },
   );
 }

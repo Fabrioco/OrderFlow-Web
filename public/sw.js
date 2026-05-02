@@ -1,4 +1,4 @@
-// Service Worker mínimo do OrderFlow Painel
+// Service Worker mínimo do The Order Flow Painel
 // Não faz cache porque o painel precisa de dados em tempo real.
 // A função dele aqui é só satisfazer o requisito de SW do navegador
 // para liberar o prompt de instalação como app.

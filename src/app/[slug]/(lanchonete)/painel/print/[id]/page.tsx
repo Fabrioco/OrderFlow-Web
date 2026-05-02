@@ -102,7 +102,7 @@ export default function PrintPage() {
               }}
             >
               {/* Pega o nome do restaurante do banco de dados */}
-              OrderFlow
+              The Order Flow
             </div>
             <div
               style={{ fontSize: "12px", marginTop: "2px", fontWeight: "bold" }}

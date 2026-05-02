@@ -122,7 +122,7 @@ export default function Login() {
                   name="email"
                   type="email"
                   required
-                  placeholder="exemplo@orderflow.com"
+                  placeholder="exemplo@The Order Flow.com"
                   className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-4 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
                 />
               </div>
@@ -193,7 +193,7 @@ export default function Login() {
 
         {/* FOOTER TEXT */}
         <p className="text-center mt-8 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
-          © 2026 OrderFlow Architect • Infraestrutura Segura
+          © 2026 The Order Flow Architect • Infraestrutura Segura
         </p>
       </div>
     </main>

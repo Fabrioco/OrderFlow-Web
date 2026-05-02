@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X, DeviceMobile, DownloadSimple } from "@phosphor-icons/react";
 
 // Salva no localStorage se o usuário dispensou o banner
-const DISMISSED_KEY = "orderflow:pwa-banner-dismissed";
+const DISMISSED_KEY = "The Order Flow:pwa-banner-dismissed";
 
 export function PwaInstallBanner() {
   const [prompt, setPrompt] = useState<any>(null);

@@ -353,7 +353,7 @@ export default function AdminPage() {
 
         {/* ── Footer ── */}
         <p className="text-center mt-12 text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
-          © 2026 OrderFlow Architect • Infraestrutura Segura
+          © 2026 The Order Flow Architect • Infraestrutura Segura
         </p>
       </div>
     </main>

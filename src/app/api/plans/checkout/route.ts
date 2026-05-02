@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         items: [
           {
             id: plan,
-            title: `Plano ${plan.toUpperCase()} - OrderFlow`,
+            title: `Plano ${plan.toUpperCase()} - The Order Flow`,
             quantity: 1,
             unit_price: amount,
             currency_id: "BRL",

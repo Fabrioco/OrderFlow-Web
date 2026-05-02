@@ -1139,7 +1139,7 @@ export default function PDVPage() {
 
         <div className="border-t border-dashed border-black my-4" />
         <p className="text-center text-xs">Obrigado pela visita!</p>
-        <p className="text-center text-xs mt-1">Powered by OrderFlow</p>
+        <p className="text-center text-xs mt-1">Powered by The Order Flow</p>
       </div>
     </main>
   );

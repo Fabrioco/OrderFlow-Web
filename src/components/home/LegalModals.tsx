@@ -145,20 +145,20 @@ function TermsModal({ onClose }: { onClose: () => void }) {
           Última atualização: janeiro de 2026
         </p>
         <Section title="1. Aceitação">
-          Ao criar uma conta ou utilizar a plataforma OrderFlow, você concorda
-          com estes Termos de Uso. Caso não concorde, não utilize nossos
-          serviços.
+          Ao criar uma conta ou utilizar a plataforma The Order Flow, você
+          concorda com estes Termos de Uso. Caso não concorde, não utilize
+          nossos serviços.
         </Section>
         <Section title="2. Descrição do serviço">
-          O OrderFlow é uma plataforma SaaS de gestão de pedidos voltada para
-          lanchonetes, hamburguerias e negócios alimentícios de pequeno e médio
-          porte. Oferecemos ferramentas de cardápio digital, PDV, gestão de
-          mesas e métricas.
+          O The Order Flow é uma plataforma SaaS de gestão de pedidos voltada
+          para lanchonetes, hamburguerias e negócios alimentícios de pequeno e
+          médio porte. Oferecemos ferramentas de cardápio digital, PDV, gestão
+          de mesas e métricas.
         </Section>
         <Section title="3. Conta e responsabilidades">
           Você é responsável por manter a confidencialidade das suas
           credenciais. Todo conteúdo adicionado à plataforma (cardápios, fotos,
-          preços) é de sua responsabilidade. O OrderFlow não verifica a
+          preços) é de sua responsabilidade. O The Order Flow não verifica a
           veracidade dessas informações.
         </Section>
         <Section title="4. Planos e pagamentos">
@@ -173,7 +173,7 @@ function TermsModal({ onClose }: { onClose: () => void }) {
           proporcionais por período não utilizado.
         </Section>
         <Section title="6. Limitação de responsabilidade">
-          O OrderFlow não se responsabiliza por lucros cessantes, perdas de
+          O The Order Flow não se responsabiliza por lucros cessantes, perdas de
           dados ou danos indiretos decorrentes do uso ou impossibilidade de uso
           da plataforma.
         </Section>
@@ -505,12 +505,12 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                     E-mail
                   </p>
                   <p className="text-xs text-text font-medium group-hover:text-accent transition-colors">
-                    fabricioolivieralopes50@gmail.com
+                    theorderflow.contato@gmail.com
                   </p>
                 </div>
               </a>
               <a
-                href="https://instagram.com/eufafalopes"
+                href="https://instagram.com/theorderflow.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface-alt hover:border-accent/40 hover:bg-accent/5 transition-all group"
@@ -525,7 +525,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                     Instagram
                   </p>
                   <p className="text-xs text-text font-medium group-hover:text-accent transition-colors">
-                    @eufafalopes
+                    @theorderflow.app
                   </p>
                 </div>
               </a>
@@ -620,8 +620,8 @@ export function FooterWithModals() {
     <>
       <footer className="py-12 px-12 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-text-muted text-[10px] tracking-widest font-bold uppercase">
         <div className="text-center md:text-left">
-          <p className="text-text-secondary mb-1">OrderFlow Solutions</p>
-          <p>© 2026 ORDERFLOW. Todos os direitos reservados.</p>
+          <p className="text-text-secondary mb-1">The Order Flow Solutions</p>
+          <p>© 2026 The Order Flow. Todos os direitos reservados.</p>
         </div>
         <div className="flex gap-8">
           {(

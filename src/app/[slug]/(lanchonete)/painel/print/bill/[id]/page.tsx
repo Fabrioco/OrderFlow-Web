@@ -311,7 +311,7 @@ export default function PrintBillPage() {
               fontWeight: "bold",
             }}
           >
-            OrderFlow
+            The Order Flow
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: "Painel — OrderFlow",
+    title: "Painel — The Order Flow",
     description: "Gerencie seus pedidos em tempo real",
     // Impede que o Google indexe o painel dos lojistas
     robots: { index: false, follow: false },
@@ -26,11 +26,11 @@ export async function generateMetadata({
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: "OrderFlow",
+      title: "The Order Flow",
     },
     // Open Graph mínimo para quando o link for compartilhado
     openGraph: {
-      title: "OrderFlow — Painel",
+      title: "The Order Flow — Painel",
       description: "Gerencie seus pedidos em tempo real",
       type: "website",
     },

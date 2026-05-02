@@ -389,7 +389,7 @@ export default function SettingsProfilePage() {
       <header className="fixed top-0 w-full h-16 flex items-center justify-between px-6 md:px-10 backdrop-blur-md z-50 border-b border-border bg-bg/20">
         <div className="flex items-center gap-3">
           <span className="text-lg font-bold tracking-tighter text-accent">
-            OrderFlow
+            The Order Flow
           </span>
           <span className="hidden sm:block text-border">·</span>
           <span className="hidden sm:block text-sm text-text-muted font-medium">
