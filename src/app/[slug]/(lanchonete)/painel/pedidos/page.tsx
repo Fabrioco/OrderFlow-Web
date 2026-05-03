@@ -91,7 +91,9 @@ export default function Dashboard() {
   const {
     play: playSound,
     enable: enableSound,
+    unlock: unlockSound,
     enabled: soundEnabled,
+    unlocked: soundUnlocked,
     loaded: soundLoaded,
   } = useSound();
   const { slug } = useParams<{ slug: string }>();
@@ -382,7 +384,6 @@ export default function Dashboard() {
       </div>
     );
   }
-  
 
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
@@ -538,6 +539,17 @@ export default function Dashboard() {
           </>
         )}
       </section>
+      {soundLoaded && soundEnabled && !soundUnlocked && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] lg:left-[calc(50%+8rem)]">
+          <button
+            onClick={unlockSound}
+            className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-accent text-menu-text font-bold text-sm shadow-2xl shadow-accent/30 hover:brightness-110 active:scale-95 transition-all animate-bounce"
+          >
+            <Bell size={18} weight="fill" />
+            Toque aqui para ativar as notificações sonoras
+          </button>
+        </div>
+      )}
 
       <PwaInstallBanner />
     </main>

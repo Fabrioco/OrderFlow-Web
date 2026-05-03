@@ -4,27 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const unlockedRef = useRef(false); // ref em vez de state — sem re-render
   const [enabled, setEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!enabled || !loaded) return;
-    // Desbloqueia o Audio na primeira interação após reload
-    function unlock() {
-      init();
-      if (!audioRef.current) return;
-      audioRef.current
-        .play()
-        .then(() => {
-          audioRef.current!.pause();
-          audioRef.current!.currentTime = 0;
-        })
-        .catch(() => {});
-      window.removeEventListener("click", unlock);
-    }
-    window.addEventListener("click", unlock);
-    return () => window.removeEventListener("click", unlock);
-  }, [enabled, loaded]);
 
   function init() {
     if (!audioRef.current) {
@@ -33,7 +15,6 @@ export function useSound() {
     }
   }
 
-  // Carrega preferência salva ao montar
   useEffect(() => {
     const saved = localStorage.getItem("sound_enabled");
     if (saved === "true") {
@@ -43,6 +24,22 @@ export function useSound() {
     setLoaded(true);
   }, []);
 
+  // Banner de desbloqueio — clique obrigatório pelo browser
+  async function unlock() {
+    init();
+    if (!audioRef.current) return;
+    try {
+      audioRef.current.currentTime = 0;
+      await audioRef.current.play();
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      unlockedRef.current = true;
+    } catch (err) {
+      console.warn("Erro ao desbloquear:", err);
+    }
+  }
+
+  // Botão "Ativar som" — primeira ativação
   async function enable() {
     init();
     if (!audioRef.current) return;
@@ -51,24 +48,24 @@ export function useSound() {
       await audioRef.current.play();
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      unlockedRef.current = true;
       setEnabled(true);
-      localStorage.setItem("sound_enabled", "true"); // ← salva
+      localStorage.setItem("sound_enabled", "true");
     } catch (err) {
       console.warn("Não foi possível ativar o áudio:", err);
     }
   }
 
   async function play(times: number = 3) {
-    if (!enabled) return;
+    if (!enabled || !unlockedRef.current || !audioRef.current) return;
     try {
-      init();
       for (let i = 0; i < times; i++) {
-        if (!audioRef.current) return;
         audioRef.current.currentTime = 0;
         await audioRef.current.play();
         await new Promise<void>((resolve) => {
-          if (!audioRef.current) return resolve();
-          audioRef.current.onended = () => resolve();
+          audioRef.current!.onended = () => resolve();
+          // fallback caso onended não dispare
+          setTimeout(resolve, 3000);
         });
       }
     } catch (err) {
@@ -76,5 +73,24 @@ export function useSound() {
     }
   }
 
-  return { play, enable, enabled, loaded };
+  // unlocked como estado derivado do ref pra controlar o banner
+  const [unlocked, setUnlockedState] = useState(false);
+  const originalUnlock = unlock;
+  async function unlockAndSync() {
+    await originalUnlock();
+    setUnlockedState(unlockedRef.current);
+  }
+  async function enableAndSync() {
+    await enable();
+    setUnlockedState(unlockedRef.current);
+  }
+
+  return {
+    play,
+    enable: enableAndSync,
+    unlock: unlockAndSync,
+    enabled,
+    unlocked,
+    loaded,
+  };
 }
