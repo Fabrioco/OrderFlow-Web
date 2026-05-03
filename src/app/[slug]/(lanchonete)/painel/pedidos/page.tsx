@@ -92,6 +92,7 @@ export default function Dashboard() {
     play: playSound,
     enable: enableSound,
     enabled: soundEnabled,
+    loaded: soundLoaded,
   } = useSound();
   const { slug } = useParams<{ slug: string }>();
   const { tenant } = useTenant(slug);
@@ -381,6 +382,7 @@ export default function Dashboard() {
       </div>
     );
   }
+  
 
   return (
     <main className="min-h-screen bg-bg text-text selection:bg-accent/30 font-sans relative">
@@ -407,7 +409,6 @@ export default function Dashboard() {
               label="Média de Preparo"
               value="12 MIN"
             />
-
             {/* Indicador de conexão */}
             <ConnectionBadge
               status={connStatus}
@@ -419,26 +420,27 @@ export default function Dashboard() {
                 subscribeRealtime();
               }}
             />
-
-            <button
-              onClick={enableSound}
-              disabled={soundEnabled}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all ${
-                soundEnabled
-                  ? "border-accent/30 bg-accent/10 text-accent cursor-default"
-                  : "border-border bg-surface text-text-muted hover:border-accent/50 hover:text-accent active:scale-95"
-              }`}
-            >
-              {soundEnabled ? (
-                <>
-                  <Bell size={16} weight="fill" /> Som ativo
-                </>
-              ) : (
-                <>
-                  <BellSlash size={16} weight="duotone" /> Ativar som
-                </>
-              )}
-            </button>
+            {soundLoaded && (
+              <button
+                onClick={enableSound}
+                disabled={soundEnabled}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-wider transition-all ${
+                  soundEnabled
+                    ? "border-accent/30 bg-accent/10 text-accent cursor-default"
+                    : "border-border bg-surface text-text-muted hover:border-accent/50 hover:text-accent active:scale-95"
+                }`}
+              >
+                {soundEnabled ? (
+                  <>
+                    <Bell size={16} weight="fill" /> Som ativo
+                  </>
+                ) : (
+                  <>
+                    <BellSlash size={16} weight="duotone" /> Ativar som
+                  </>
+                )}
+              </button>
+            )}{" "}
           </div>
         </header>
 

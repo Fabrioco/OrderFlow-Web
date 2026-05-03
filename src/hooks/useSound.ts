@@ -1,8 +1,30 @@
-import { useRef, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 
 export function useSound() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [enabled, setEnabled] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!enabled || !loaded) return;
+    // Desbloqueia o Audio na primeira interação após reload
+    function unlock() {
+      init();
+      if (!audioRef.current) return;
+      audioRef.current
+        .play()
+        .then(() => {
+          audioRef.current!.pause();
+          audioRef.current!.currentTime = 0;
+        })
+        .catch(() => {});
+      window.removeEventListener("click", unlock);
+    }
+    window.addEventListener("click", unlock);
+    return () => window.removeEventListener("click", unlock);
+  }, [enabled, loaded]);
 
   function init() {
     if (!audioRef.current) {
@@ -11,7 +33,16 @@ export function useSound() {
     }
   }
 
-  // Chame em resposta a um clique do usuário para desbloquear o autoplay do browser
+  // Carrega preferência salva ao montar
+  useEffect(() => {
+    const saved = localStorage.getItem("sound_enabled");
+    if (saved === "true") {
+      init();
+      setEnabled(true);
+    }
+    setLoaded(true);
+  }, []);
+
   async function enable() {
     init();
     if (!audioRef.current) return;
@@ -21,6 +52,7 @@ export function useSound() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       setEnabled(true);
+      localStorage.setItem("sound_enabled", "true"); // ← salva
     } catch (err) {
       console.warn("Não foi possível ativar o áudio:", err);
     }
@@ -44,5 +76,5 @@ export function useSound() {
     }
   }
 
-  return { play, enable, enabled };
+  return { play, enable, enabled, loaded };
 }
