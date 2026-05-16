@@ -122,7 +122,7 @@ export default function Login() {
                   name="email"
                   type="email"
                   required
-                  placeholder="exemplo@The Order Flow.com"
+                  placeholder="exemplo@company.com"
                   className="w-full bg-surface-alt border border-border rounded-xl py-4 pl-12 pr-4 text-sm outline-hidden focus:border-accent/50 focus:ring-4 focus:ring-accent/5 transition-all"
                 />
               </div>
